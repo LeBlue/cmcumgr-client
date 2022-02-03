@@ -120,6 +120,28 @@ mcumgr_dep = declare_dependency(
     include_directories: ['src', 'src/include', 'src/mcumgr', 'src/transport', 'src/commands'],
 )
 
+
+prefixdir = get_option('prefix')
+bindir = prefixdir / get_option('bindir')
+
+src_cli = [
+    'src/main.c',
+    'src/cli_opts.c',
+    'src/file_reader_unix.c',
+    'src/transport/serial/serial_opts.c',
+    'src/transport/serial/serial_port_unix.c',
+
+]
+
+mcumgr = executable('mcumgr',
+    sources: src_cli,
+    include_directories : [],
+    dependencies: [ mcumgr_dep, utils_dep ],
+    install : true,
+    install_dir : bindir,
+)
+
+
 if get_option('enable-tests') == true
 
     ptest = static_library(
