@@ -1,0 +1,3 @@
+[submodule "src/mcumgr/tinycbor"]
+	path = src/mcumgr/tinycbor
+	url = https://github.com/01org/tinycbor.git
