@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2022 Matthias Wauer
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef UTILS_TEST_H
+#define UTILS_TEST_H
+
+#include "ptest/ptest.h"
+#include "utils.h"
+
+#define _STR(x) #x
+#define _XSTR(x) _STR(x)
+
+#define PT_ASSERT_MEM_EQ(_mem1, _mem2, _len) \
+do { \
+    int _ret = memcmp(_mem1, _mem2, _len); \
+    if (_ret != 0) { \
+        hexdump(_mem1, _len, "\n" _XSTR(_mem1) "\n"); \
+        hexdump(_mem2, _len,      _XSTR(_mem2) "\n"); \
+    } \
+    PT_ASSERT(_ret == 0); \
+} while (0)
+
+
+#endif
+

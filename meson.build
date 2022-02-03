@@ -87,3 +87,16 @@ cbor_dep = declare_dependency(
     link_with: libcbor,
     include_directories: [ 'src/mcumgr/tinycbor/src' ],
 )
+
+if get_option('build-tests') == true
+
+    ptest = static_library(
+        'ptest',
+        sources: 'tests/ptest/ptest.c',
+        c_args: [ '-Wno-unused-argument', '-Wno-sign-compare', '-Wno-unused-parameter' ], # silence warning in lib
+    )
+    ptest_dep = declare_dependency(
+        link_with: ptest,
+    )
+
+endif

@@ -1,0 +1,1 @@
+option('enable-tests', type: 'boolean', value: false, description: 'Enable building test programs')
