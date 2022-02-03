@@ -182,4 +182,11 @@ if get_option('enable-tests') == true
     )
     test('test-cli-parser-serial', test_cli_parser_serial)
 
+    test_mgmt_utils = executable('test-mgmt-utils',
+        sources: [ 'tests/test_mgmt_utils.c', 'src/mcumgr/mgmt_utils.c' ],
+        include_directories : [ 'src', 'src/include', 'src/mcumgr', 'src/transport/serial' ],
+        dependencies: [ ptest_dep, utils_dep ],
+    )
+    test('test-mgmt-utils', test_mgmt_utils)
+
 endif
