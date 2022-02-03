@@ -175,4 +175,11 @@ if get_option('enable-tests') == true
     )
     test('test-serial-transport', test_serial_transport)
 
+    test_cli_parser_serial = executable('test-cli-parser-serial',
+        sources: [ 'tests/test_cli_parser_serial.c', 'src/transport/serial/serial_opts.c' ],
+        include_directories : ['src', 'src/transport',],
+        dependencies: [ ptest_dep, utils_dep ],
+    )
+    test('test-cli-parser-serial', test_cli_parser_serial)
+
 endif
