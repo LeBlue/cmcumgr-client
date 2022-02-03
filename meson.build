@@ -157,4 +157,11 @@ if get_option('enable-tests') == true
     )
     test('test-cbor', test_cbor)
 
+    test_cli_parser = executable('test-cli-parser',
+        sources: [ 'tests/test_cli_parser.c', 'src/cli_opts.c', 'src/mcumgr/mgmt_utils.c' ],
+        include_directories : ['src', 'src/mcumgr', 'src/include'],
+        dependencies: [ ptest_dep, utils_dep ],
+    )
+    test('test-cli-parser', test_cli_parser)
+
 endif
