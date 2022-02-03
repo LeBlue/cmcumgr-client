@@ -166,4 +166,11 @@ if get_option('enable-tests') == true
     )
     test('test-cli-parser', test_cli_parser)
 
+    test_serial_transport = executable('test-serial-transport',
+        sources: [ 'tests/test_serial_transport.c', 'src/mcumgr/mgmt_hdr.c', 'src/transport/serial/smp_serial.c' ],
+        include_directories : [ 'src', 'src/mcumgr', 'src/transport', 'src/transport/serial' ],
+        dependencies: [ ptest_dep, utils_dep ],
+    )
+    test('test-serial-transport', test_serial_transport)
+
 endif
