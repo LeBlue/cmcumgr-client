@@ -96,6 +96,8 @@ src_mcumgr = [
     'src/mcumgr/mgmt_img.c',
     'src/mcumgr/mgmt_os.c',
     'src/mcuboot_img.c',
+    'src/commands/cmd_os.c',
+    'src/commands/cmd_img.c',
     'src/transport/serial/smp_serial.c',
 ]
 
@@ -115,7 +117,7 @@ libmcumgr = static_library(
 
 mcumgr_dep = declare_dependency(
     link_with: libmcumgr,
-    include_directories: ['src', 'src/include', 'src/mcumgr', 'src/transport',],
+    include_directories: ['src', 'src/include', 'src/mcumgr', 'src/transport', 'src/commands'],
 )
 
 if get_option('enable-tests') == true
