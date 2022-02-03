@@ -89,6 +89,33 @@ cbor_dep = declare_dependency(
     include_directories: [ 'src/mcumgr/tinycbor/src' ],
 )
 
+src_mcumgr = [
+    'src/mcumgr/mgmt_common.c',
+    'src/mcumgr/mgmt_utils.c',
+    'src/mcumgr/mgmt_hdr.c',
+    'src/mcumgr/mgmt_img.c',
+    'src/mcumgr/mgmt_os.c',
+    'src/mcuboot_img.c',
+]
+
+libmcumgr = static_library(
+    'mcumgr-client',
+    sources: src_mcumgr,
+    dependencies: [ utils_dep, cbor_dep ],
+    include_directories: [
+        'src/lib/include',
+        'src/include',
+        'src/mcumgr',
+        'src/mcumgr/tinycbor/src',
+        'src'
+    ],
+)
+
+mcumgr_dep = declare_dependency(
+    link_with: libmcumgr,
+    include_directories: ['src/include'],
+)
+
 if get_option('enable-tests') == true
 
     ptest = static_library(
