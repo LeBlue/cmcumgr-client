@@ -113,7 +113,7 @@ libmcumgr = static_library(
 
 mcumgr_dep = declare_dependency(
     link_with: libmcumgr,
-    include_directories: ['src/include'],
+    include_directories: ['src', 'src/include', 'src/mcumgr'],
 )
 
 if get_option('enable-tests') == true
@@ -150,5 +150,11 @@ if get_option('enable-tests') == true
     )
     configure_file(copy: true, input: 'tests/mcuboot_image.bin', output: 'mcuboot_image.bin')
     test('test-mcuboot-image-parser', test_mcuboot_img_parser)
+
+    test_cbor = executable('test-cbor',
+        sources: [ 'tests/test_cbor.c' ],
+        dependencies: [ ptest_dep, utils_dep, mcumgr_dep ],
+    )
+    test('test-cbor', test_cbor)
 
 endif
