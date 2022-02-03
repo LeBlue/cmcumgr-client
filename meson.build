@@ -42,7 +42,7 @@ common_cc_flags = [
     '-Waddress-of-packed-member',
 ]
 
-add_global_arguments(common_cc_flags, language: 'c')
+# add_global_arguments(common_cc_flags, language: 'c')
 
 conf_data = configuration_data()
 
@@ -69,6 +69,7 @@ utils = static_library(
 
 utils_dep = declare_dependency(
     link_with: utils,
+    include_directories: include_directories('src/lib/include'),
 )
 
 src_cbor = [
@@ -88,15 +89,24 @@ cbor_dep = declare_dependency(
     include_directories: [ 'src/mcumgr/tinycbor/src' ],
 )
 
-if get_option('build-tests') == true
+if get_option('enable-tests') == true
 
     ptest = static_library(
         'ptest',
         sources: 'tests/ptest/ptest.c',
         c_args: [ '-Wno-unused-argument', '-Wno-sign-compare', '-Wno-unused-parameter' ], # silence warning in lib
     )
+
     ptest_dep = declare_dependency(
-        link_with: ptest,
+        link_with: [ ptest, utils ]
     )
+
+    test_file_reader_unix = executable('test-file-reader-unix',
+        sources: [ 'tests/test_file_reader.c', 'src/file_reader_unix.c' ],
+        include_directories : 'src',
+        dependencies: [ ptest_dep, utils_dep ],
+    )
+    configure_file(copy: true, input: 'tests/file_reader_in.txt', output: 'file_reader_in.txt')
+    test('test-file-reader-unix', test_file_reader_unix)
 
 endif
