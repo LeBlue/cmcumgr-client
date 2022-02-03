@@ -6,7 +6,7 @@
 #ifndef MCUBOOT_IMAGE_H
 #define MCUBOOT_IMAGE_H
 
-#include "mgmt_rc.h"
+#include "mgmt.h"
 
 struct file_reader;
 
@@ -24,6 +24,5 @@ int image_hash_to_str(char *hbuf, const uint8_t hash[32]);
 
 
 int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *image_info);
-void mcuboot_image_info_print(const struct mcuboot_image *image_info);
 
 #endif

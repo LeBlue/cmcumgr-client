@@ -109,4 +109,19 @@ if get_option('enable-tests') == true
     configure_file(copy: true, input: 'tests/file_reader_in.txt', output: 'file_reader_in.txt')
     test('test-file-reader-unix', test_file_reader_unix)
 
+    test_mcuboot_img_parser_int = executable('test-mcuboot-img-parser-internal',
+        sources: [ 'tests/test_mcuboot_img_internal.c', 'src/file_reader_unix.c'],
+        include_directories : [ 'src', 'src/include' ],
+        dependencies: [ ptest_dep, utils_dep ],
+    )
+    test('test-mcuboot-image-parser-internal', test_mcuboot_img_parser_int)
+
+    test_mcuboot_img_parser = executable('test-mcuboot-img-parser',
+        sources: [ 'tests/test_mcuboot_img.c', 'src/file_reader_unix.c', 'src/mcuboot_img.c'],
+        include_directories : [ 'src', 'src/include' ],
+        dependencies: [ ptest_dep, utils_dep ],
+    )
+    configure_file(copy: true, input: 'tests/mcuboot_image.bin', output: 'mcuboot_image.bin')
+    test('test-mcuboot-image-parser', test_mcuboot_img_parser)
+
 endif

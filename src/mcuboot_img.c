@@ -8,7 +8,6 @@
 
 #include "byteordering.h"
 #include "mcuboot_img.h"
-#include "mgmt_utils.h"
 #include "file_reader.h"
 
 #define IMAGE_MAGIC                 0x96f3b83d
