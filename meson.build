@@ -233,4 +233,10 @@ if get_option('enable-tests') == true
     )
     test('test-mgmt-utils', test_mgmt_utils)
 
+    test_mgmt_img_upload = executable('test-mgmt-img-upload',
+        sources: [ 'tests/test_mgmt_img_upload.c' ],
+        dependencies: [ ptest_dep, utils_dep, mcumgr_dep ],
+    )
+    test('test-mgmt-img-upload', test_mgmt_img_upload)
+
 endif

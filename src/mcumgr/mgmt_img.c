@@ -488,7 +488,7 @@ int mgmt_img_decode_state_rsp(const uint8_t *buf, size_t sz, int64_t *mgmt_err, 
 		*mgmt_err = 0;
 	}
 
-	return rsp_rc;
+	return 0;
 }
 
 /**
@@ -531,4 +531,138 @@ int mgmt_img_decode_test_rsp(const uint8_t *buf, size_t sz, struct mgmt_image_st
 int mgmt_img_decode_confirm_rsp(const uint8_t *buf, size_t sz, struct mgmt_image_state_rsp *rsp)
 {
 	return mgmt_img_decode_state_rsp(buf, sz, &rsp->mgmt_rc, &rsp->state);
+}
+
+
+ssize_t mgmt_create_image_upload_seg0_req(uint8_t *buf, size_t sz,
+    size_t fw_sz, const uint8_t *fw_data, const uint8_t *fw_sha, size_t seglen)
+{
+	int rc;
+	CborEncoder enc;
+	CborEncoder map;
+	struct mgmt_hdr *nh;
+	int len;
+
+	if (NULL == (nh = mgmt_header_init(buf, sz, MGMT_OP_WRITE, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ID_UPLOAD))) {
+		return -1;
+	}
+
+	mgmt_cbor_encoder_init(&enc, buf, sz);
+
+	rc = cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+
+	rc |= cbor_encode_text_stringz(&map, "sha");
+	rc |= cbor_encode_byte_string(&map, fw_sha, 32);
+	rc |= cbor_encode_text_stringz(&map, "off");
+	rc |= cbor_encode_uint(&map, 0);
+	rc |= cbor_encode_text_stringz(&map, "len");
+	rc |= cbor_encode_uint(&map, fw_sz);
+	rc |= cbor_encode_text_stringz(&map, "data");
+	rc |= cbor_encode_byte_string(&map, fw_data, seglen);
+
+	rc |= cbor_encoder_close_container(&enc, &map);
+	if (rc) {
+		return -1;
+	}
+
+	len = mgmt_cbor_encoder_get_buffer_size(&enc, buf);
+	mgmt_header_set_len(nh, len);
+
+	return len + MGMT_HEADER_LEN;
+}
+
+ssize_t mgmt_create_image_upload_segX_req(uint8_t *buf, size_t sz,
+    size_t off, const uint8_t *data, size_t seglen)
+{
+	int rc;
+	CborEncoder enc;
+	CborEncoder map;
+	struct mgmt_hdr *nh;
+	int len;
+
+	if (NULL == (nh = mgmt_header_init(buf, sz, MGMT_OP_WRITE, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ID_UPLOAD))) {
+		return -1;
+	}
+
+	mgmt_cbor_encoder_init(&enc, buf, sz);
+
+	rc = cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
+
+	rc |= cbor_encode_text_stringz(&map, "off");
+	rc |= cbor_encode_uint(&map, off);
+	rc |= cbor_encode_text_stringz(&map, "data");
+	rc |= cbor_encode_byte_string(&map, data, seglen);
+
+	rc |= cbor_encoder_close_container(&enc, &map);
+	if (rc) {
+		return -1;
+	}
+
+	len = mgmt_cbor_encoder_get_buffer_size(&enc, buf);
+	mgmt_header_set_len(nh, len);
+
+	return len + MGMT_HEADER_LEN;
+}
+
+
+/**
+ * @brief Check and return the mgmt echo return message from an SMP message
+ *
+ * @param buf       The buffer holding the message
+ * @param sz        Size of the buffer
+ * @param off       pointer where to save the new offset for the next upload chunk.
+ * @param mgmt_err  pointer where to save the mgmt return code
+ * @return          0 on success and error code otherwise
+ *
+ * @retval 0 Successful execution, @p off is valid.
+ * @retval -EINVAL Argument validation failed
+ * @retval -ENODATA @p buf too short to hold SMP header or not a complete SMP packet.
+ * @retval -ENOMSG SMP payload decoding error or unexpected format, e.g. not a map, requested value has wrong format, ...
+ */
+int mgmt_img_upload_decode_rsp(const uint8_t *buf, size_t sz, size_t *off, struct mgmt_rc *rsp)
+{
+	CborParser parser;
+	CborValue map_val;
+	CborValue val;
+	int rc;
+	int64_t val64;
+	int64_t rsp_off = 0;
+
+	rc = mgmt_header_len_check_and_advance(&buf, &sz);
+	if (rc) {
+		return rc;
+	}
+
+	rc = mgmt_cbor_parser_init_enter_map(buf, sz, &parser, &map_val, &val);
+	if (rc) {
+		return rc;
+	}
+
+	while (!cbor_value_at_end(&val)) {
+		if (cbor_value_get_type(&val) != CborTextStringType) {
+			break;
+		}
+		size_t nlen = MGMT_CBOR_MAX_KEYLEN;
+		char keyname[MGMT_CBOR_MAX_KEYLEN + 1];
+
+		rc = cbor_value_copy_text_string(&val, keyname, &nlen, &val);
+		keyname[MGMT_CBOR_MAX_KEYLEN] = '\0';
+
+		if (rc) {
+			return -ENOMSG;
+		}
+		if (cbor_value_get_type(&val) != CborIntegerType) {
+			return -ENOMSG;
+		}
+		cbor_value_get_int64(&val, &val64);
+		if (!strcmp(keyname, "rc")) {
+			rsp->mgmt_rc = val64;
+		} else if (!strcmp(keyname, "off")) {
+			rsp_off = val64;
+		}
+		cbor_value_advance(&val);
+	}
+	*off = rsp_off;
+
+	return 0;
 }

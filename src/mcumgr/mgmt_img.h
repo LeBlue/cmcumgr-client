@@ -13,6 +13,7 @@
 
 #include "mgmt.h"
 #include "mcuboot_img.h"
+#include "file_reader.h"
 
 /* image update common */
 struct mgmt_slot_state {
@@ -62,5 +63,18 @@ int mgmt_img_decode_test_rsp(const uint8_t *buf, size_t sz, struct mgmt_image_st
 /* image confirm */
 ssize_t mgmt_create_image_confirm_req(uint8_t *buf, size_t sz);
 int mgmt_img_decode_confirm_rsp(const uint8_t *buf, size_t sz, struct mgmt_image_state_rsp *rsp);
+
+
+/* image upload */
+struct mgmt_image_upload_req {
+    struct mcuboot_image image;
+    struct file_reader reader;
+};
+
+ssize_t mgmt_create_image_upload_seg0_req(uint8_t *buf, size_t sz, size_t fw_sz, const uint8_t *fw_data, const uint8_t *fw_sha, size_t seglen);
+ssize_t mgmt_create_image_upload_segX_req(uint8_t *buf, size_t sz, size_t off, const uint8_t *fw_data, size_t seglen);
+
+
+int mgmt_img_upload_decode_rsp(const uint8_t *buf, size_t sz, size_t *off, struct mgmt_rc *rsp);
 
 #endif
