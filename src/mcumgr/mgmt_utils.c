@@ -10,53 +10,7 @@
 #include <string.h>
 
 #include "mgmt_utils.h"
-
-int data_buf_to_str(const uint8_t *data_buf, size_t data_sz, char *str_buf, size_t str_sz)
-{
-    size_t i;
-
-    if (!data_buf || !data_sz || !str_buf || !str_sz) {
-        if (str_buf && str_sz) {
-            *str_buf = '\0';
-        }
-        return -EINVAL;
-    }
-
-    for (i = 0; i < data_sz && str_sz > 2; ++i, str_sz -= 2, ++data_buf, str_buf += 2) {
-        sprintf(str_buf, "%02x", *data_buf);
-    }
-    if (i < data_sz) {
-        str_buf = '\0';
-        return -ENOBUFS;
-    }
-    return 0;
-}
-
-int str_to_data_buf(const char *str_buf, uint8_t *data_buf, size_t data_sz)
-{
-    if (!data_buf || !data_sz || !str_buf) {
-        return -EINVAL;
-    }
-
-    for (size_t i = 0; i < data_sz && *str_buf != '\0'; ++i, str_buf += 2) {
-        char sub[2];
-        for (int j = 0; j < 2 && str_buf[j] != '\0'; ++j) {
-            if (str_buf[j] >= '0' && str_buf[j] <= '9') {
-                sub[j] = '0';
-            } else if (str_buf[j] >= 'a' && str_buf[j] <= 'f') {
-                sub[j] = 'a' - 10;
-            } else if (str_buf[j] >= 'A' && str_buf[j] <= 'F') {
-                sub[j] = 'A' - 10;
-            } else {
-                return -EINVAL;
-            }
-        }
-
-        data_buf[i] = ((str_buf[0] - sub[0]) << 4) | (str_buf[1] - sub[1]);
-    }
-    return 0;
-}
-
+#include "hexlify.h"
 
 /**
  * @brief           print @p version to string
@@ -81,7 +35,7 @@ int image_version_to_str(char *vbuf, const struct image_version *version)
 
 int image_hash_to_str(char *hbuf, const uint8_t hash[32])
 {
-    data_buf_to_str(hash, 32, hbuf, IMAGE_HASH_STR_MAX);
+    hexlify(hash, 32, hbuf, IMAGE_HASH_STR_MAX);
     return 0;
 }
 
