@@ -9,6 +9,7 @@
 #include "ptest/ptest.h"
 #include "utils_test.h"
 
+#include "hexlify.h"
 #include "mgmt_img.h"
 #include "mgmt_utils.h"
 
@@ -84,9 +85,9 @@ void test_image_parse_hash(void)
     uint8_t hash_buf[33];
     memset(hash_buf, 0, 33);
 
-    int ret = str_to_data_buf(hash_str, hash_buf, sizeof(hash_buf)-1); /* check for overflow */
+    int ret = unhexlify(hash_str, hash_buf, sizeof(hash_buf)-1); /* check for overflow */
 
-    PT_ASSERT(ret == 0);
+    PT_ASSERT(ret == 32);
     PT_ASSERT_MEM_EQ(hash_buf, hash, 32);
     PT_ASSERT(hash_buf[32] == '\0');
 
@@ -97,9 +98,9 @@ void test_image_parse_hash_short_buf(void)
     uint8_t hash_buf[33];
     memset(hash_buf, 0, 33);
 
-    int ret = str_to_data_buf(hash_str, hash_buf, sizeof(hash_buf)-2); /* check for overflow */
+    int ret = unhexlify(hash_str, hash_buf, sizeof(hash_buf)-2); /* check for overflow */
 
-    PT_ASSERT(ret == 0);
+    PT_ASSERT(ret == 31);
     PT_ASSERT_MEM_EQ(hash_buf, hash, 31);
     PT_ASSERT(hash_buf[31] == '\0');
 }
@@ -109,7 +110,7 @@ void test_image_parse_hash_invalid_char_1(void)
     uint8_t hash_buf[3];
     const char *hash_string = "123G";
     memset(hash_buf, 0, 3);
-    int ret = str_to_data_buf(hash_string, hash_buf, sizeof(hash_buf)-1);
+    int ret = unhexlify(hash_string, hash_buf, sizeof(hash_buf)-1);
     PT_ASSERT(ret == -EINVAL);
 }
 
@@ -117,7 +118,7 @@ void test_image_parse_hash_invalid_char_2(void)
 {
     uint8_t hash_buf[2];
     const char *hash_string = "g";
-    int ret = str_to_data_buf(hash_string, hash_buf, sizeof(hash_buf)-1);
+    int ret = unhexlify(hash_string, hash_buf, sizeof(hash_buf)-1);
     PT_ASSERT(ret == -EINVAL);
 }
 
@@ -125,7 +126,7 @@ void test_image_parse_hash_invalid_char_3(void)
 {
     uint8_t hash_buf[2];
     const char *hash_string = ":";
-    int ret = str_to_data_buf(hash_string, hash_buf, sizeof(hash_buf)-1);
+    int ret = unhexlify(hash_string, hash_buf, sizeof(hash_buf)-1);
     PT_ASSERT(ret == -EINVAL);
 }
 
@@ -133,7 +134,7 @@ void test_image_parse_hash_invalid_char_4(void)
 {
     uint8_t hash_buf[2];
     const char *hash_string = "/";
-    int ret = str_to_data_buf(hash_string, hash_buf, sizeof(hash_buf)-1);
+    int ret = unhexlify(hash_string, hash_buf, sizeof(hash_buf)-1);
     PT_ASSERT(ret == -EINVAL);
 }
 
@@ -141,7 +142,7 @@ void test_image_parse_hash_invalid_char_5(void)
 {
     uint8_t hash_buf[2];
     const char *hash_string = "@";
-    int ret = str_to_data_buf(hash_string, hash_buf, sizeof(hash_buf)-1); /* check for overflow */
+    int ret = unhexlify(hash_string, hash_buf, sizeof(hash_buf)-1); /* check for overflow */
     PT_ASSERT(ret == -EINVAL);
 }
 
@@ -149,7 +150,7 @@ void test_image_parse_hash_invalid_char_6(void)
 {
     uint8_t hash_buf[2];
     const char *hash_string = "`";
-    int ret = str_to_data_buf(hash_string, hash_buf, sizeof(hash_buf)-1); /* check for overflow */
+    int ret = unhexlify(hash_string, hash_buf, sizeof(hash_buf)-1); /* check for overflow */
     PT_ASSERT(ret == -EINVAL);
 }
 
@@ -160,7 +161,7 @@ void test_image_parse_hash_odd_len(void)
     const char *hash_string = "123";
     memset(hash_buf, 0, 33);
 
-    int ret = str_to_data_buf(hash_string, hash_buf, sizeof(hash_buf)-1); /* check for overflow */
+    int ret = unhexlify(hash_string, hash_buf, sizeof(hash_buf)-1); /* check for overflow */
     PT_ASSERT(ret == -EINVAL);
 }
 
@@ -168,7 +169,7 @@ void test_image_parse_hash_odd_len(void)
 void test_image_print_hash(void)
 {
     char str_buf[65];
-    int ret = data_buf_to_str(hash, sizeof(hash), str_buf, sizeof(str_buf));
+    int ret = hexlify(hash, sizeof(hash), str_buf, sizeof(str_buf));
 
     PT_ASSERT(ret == 0);
     PT_ASSERT_MEM_EQ(str_buf, hash_str, 65); /* including \0 byte */
@@ -177,7 +178,7 @@ void test_image_print_hash(void)
 void test_image_print_hash_short_buf(void)
 {
     char str_buf[61];
-    int ret = data_buf_to_str(hash, sizeof(hash), str_buf, sizeof(str_buf));
+    int ret = hexlify(hash, sizeof(hash), str_buf, sizeof(str_buf));
 
     PT_ASSERT(ret == -ENOBUFS);
     PT_ASSERT_MEM_EQ(str_buf, hash_str, 60);
@@ -187,13 +188,13 @@ void test_image_print_hash_short_buf(void)
 void test_image_print_hash_no_null_bytes_space(void)
 {
     char str_buf[64];
-    int ret = data_buf_to_str(hash, sizeof(hash), str_buf, sizeof(str_buf));
+    int ret = hexlify(hash, sizeof(hash), str_buf, sizeof(str_buf));
 
     PT_ASSERT(ret == -ENOBUFS);
     /* should print hash as far as possible, but only full 2 digit hex */
     PT_ASSERT_MEM_EQ(str_buf, hash_str, 62);
     /* last should be null byte */
-    PT_ASSERT(str_buf[63] == 0); /* including \0 byte */
+    PT_ASSERT(str_buf[62] == '\0'); /* including \0 byte */
 }
 
 void suite_img_parse_utils(void)

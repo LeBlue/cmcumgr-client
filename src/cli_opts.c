@@ -15,6 +15,7 @@
 #endif
 
 #include "cli_opts.h"
+#include "hexlify.h"
 
 #ifdef VERSION
 static const char *version = VERSION;
@@ -66,36 +67,6 @@ static const char* get_optarg(const char *arg)
         return arg;
     return (arg + 1);
 }
-
-// struct long_options {
-//     const char *lopt;
-//     int opt;
-// };
-
-// static int parse_long_opt(int argc, char**argv, struct cli_options *copts)
-// {
-//     (void)argc;
-//     (void)argv;
-//     (void)copts;
-
-//     return -1;
-// }
-
-// static int parse_long_opt(const struct long_options *long_opts, const char *optstr)
-// {
-//     while (long_opts) {
-//         if (0 == strcmp(long_opts->lopt, optstr)) {
-//             return long_opts->opt;
-//         }
-//     }
-//     return 0;
-// }
-
-// static const struct long_options long_opts[] = {
-//     { .lopt = "help", .opt = 'h', },
-//     { /* sentinel */ }
-// };
-
 
 #define COMMON_OPTS "h"
 
@@ -307,12 +278,15 @@ static int parse_image_test_opts(struct cli_options *copts)
         return ret;
     }
     if ((strlen(copts->cmdopts.positional.arg[0]) + 1) != IMAGE_HASH_STR_MAX) {
-        return -EBADMSG;
+        return INVALID_ARGUMENT;
     }
-    return str_to_data_buf(copts->cmdopts.positional.arg[0],
-                           copts->cmdopts.img_test.fw_sha,
-                           sizeof(copts->cmdopts.img_test.fw_sha));
-
+    return unhexlify(copts->cmdopts.positional.arg[0],
+                     copts->cmdopts.img_test.fw_sha,
+                     sizeof(copts->cmdopts.img_test.fw_sha));
+    if (ret != sizeof(copts->cmdopts.img_test.fw_sha)) {
+        return INVALID_ARGUMENT;
+    }
+    return 0;
 }
 
 int parse_image_opts(struct cli_options *copts)
