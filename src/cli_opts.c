@@ -280,6 +280,7 @@ static int parse_image_test_opts(struct cli_options *copts)
     if ((strlen(copts->cmdopts.positional.arg[0]) + 1) != IMAGE_HASH_STR_MAX) {
         return INVALID_ARGUMENT;
     }
+    copts->cmdopts.img_test.confirm = false;
     return unhexlify(copts->cmdopts.positional.arg[0],
                      copts->cmdopts.img_test.fw_sha,
                      sizeof(copts->cmdopts.img_test.fw_sha));
