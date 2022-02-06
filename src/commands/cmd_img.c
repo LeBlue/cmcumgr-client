@@ -14,10 +14,11 @@
 #include "mgmt_img.h"
 #include "smp_transport.h"
 #include "utils.h"
+#include "cmd_common.h"
 
 int cmd_img_run_image_list(struct smp_transport *transport, struct mgmt_image_state_rsp *rsp)
 {
-    uint8_t buf[512];
+    uint8_t buf[CMD_BUF_SZ];
     ssize_t cnt;
     int rc, buflen;
 
@@ -31,14 +32,7 @@ int cmd_img_run_image_list(struct smp_transport *transport, struct mgmt_image_st
         ehexdump(buf, cnt, "image list req");
     }
 
-    rc = transport->ops->write(transport, buf, cnt);
-
-    if (rc < 0) {
-        fprintf(stderr, "write fail %d\n", rc);
-        return rc;
-    }
-
-    rc = transport->ops->read(transport, buf, sizeof(buf));
+    rc = cmd_run(transport, buf, cnt, sizeof(buf));
 
     if (rc < 0) {
         fprintf(stderr, "read fail %d\n", rc);
