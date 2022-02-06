@@ -97,6 +97,7 @@ src_mcumgr = [
     'src/mcumgr/mgmt_img.c',
     'src/mcumgr/mgmt_os.c',
     'src/mcuboot_img.c',
+    'src/commands/cmd_common.c',
     'src/commands/cmd_os.c',
     'src/commands/cmd_img.c',
     'src/transport/serial/smp_serial.c',
