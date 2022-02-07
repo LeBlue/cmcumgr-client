@@ -112,7 +112,7 @@ int cli_execute_echo(struct smp_transport *transport, struct cli_options *copts)
     }
     rc = cmd_os_run_echo(transport, req, &rsp);
 
-    if (rc == 0) {
+    if (rc >= 0) {
         if (rsp.mgmt_rc == 0) {
             printf("%s\n", rsp.echo_str);
         } else {
@@ -162,7 +162,7 @@ int cli_execute_image_list(struct smp_transport *transport, struct cli_options *
 
     rc = cmd_img_run_image_list(transport, &rsp);
 
-    if (rc == 0) {
+    if (rc >= 0) {
         if (rsp.mgmt_rc == 0) {
             print_image_slot_state(&rsp.state);
         } else {
@@ -173,6 +173,71 @@ int cli_execute_image_list(struct smp_transport *transport, struct cli_options *
     }
     return rc;
 }
+
+
+int cli_execute_image_test(struct smp_transport *transport, struct cli_options *copts)
+{
+    int rc;
+    struct mgmt_image_state_rsp rsp;
+
+    rc = cmd_img_run_image_test(transport, &copts->cmdopts.img_test, &rsp);
+
+    if (rc >= 0) {
+        if (rsp.mgmt_rc == 0) {
+            print_image_slot_state(&rsp.state);
+        } else {
+            print_mgmt_error(rsp.mgmt_rc);
+        }
+    } else {
+        fprintf(stderr, "Failed to test image %s: %s\n", copts->cmdopts.img_test.fw_sha, strerror(-rc));
+    }
+    return rc;
+}
+
+
+int cli_execute_image_confirm(struct smp_transport *transport, struct cli_options *copts)
+{
+    (void) copts;
+
+    int rc;
+    struct mgmt_image_state_rsp rsp;
+
+    rc = cmd_img_run_image_confirm(transport, &rsp);
+
+    if (rc >= 0) {
+        if (rsp.mgmt_rc == 0) {
+            print_image_slot_state(&rsp.state);
+        } else {
+            print_mgmt_error(rsp.mgmt_rc);
+        }
+    } else {
+        fprintf(stderr, "Failed to confirm image: %s\n", strerror(-rc));
+    }
+    return rc;
+}
+
+
+int cli_execute_image_erase(struct smp_transport *transport, struct cli_options *copts)
+{
+    (void) copts;
+
+    int rc;
+    struct mgmt_rc rsp;
+
+    rc = cmd_img_run_image_erase(transport, &rsp);
+
+    if (rc == 0) {
+        if (rsp.mgmt_rc == 0) {
+            printf("Done\n");
+        } else {
+            print_mgmt_error(rsp.mgmt_rc);
+        }
+    } else {
+        fprintf(stderr, "Failed to erase image: %s\n", strerror(-rc));
+    }
+    return rc;
+}
+
 
 
 int
@@ -224,33 +289,34 @@ main(int argc, char **argv)
         }
     }
 
-    if (copts.subcmd == CMD_RESET) {
-        rc = cli_execute_reset(&transport);
-    } else if (copts.subcmd == CMD_ECHO) {
-        rc = cli_execute_echo(&transport, &copts);
-    } else
-
-    /* if (copts.subcmd == CMD_IMAGE) {
-        rc = file_read(state.filename, &state.file_sz, &state.file);
-        if (rc < 0) {
-            fprintf(stderr, "Failed to read %s\n", state.filename);
-            exit(1);
-        }
-        printf("Skipping upload\n");
-        exit(1);
-        rc = img_upload();
-    } else if (copts.subcmd == CMD_IMAGE_INFO) {
-        rc = cli_execute_image_info(&copts);
-    } else */
-    if (copts.subcmd == CMD_IMAGE_LIST) {
-        rc = cli_execute_image_list(&transport, &copts);
-    } /* else if (copts.subcmd == CMD_IMAGE_TEST) {
-        rc = cli_execute_image_test(&copts);
-    } else if (copts.subcmd == CMD_IMAGE_CONFIRM) {
-        rc = cli_execute_image_confirm(&copts);
-    }*/ else {
-        fprintf(stderr, "Not implemented: %s\n", copts.cmd);
-        exit(EXIT_FAILURE);
+    switch (copts.subcmd) {
+        case CMD_RESET:
+            rc = cli_execute_reset(&transport);
+            break;
+        case CMD_ECHO:
+            rc = cli_execute_echo(&transport, &copts);
+            break;
+        /* case CMD_IMAGE_UPLOAD:
+            break; */
+        case CMD_IMAGE_INFO:
+            rc = cli_execute_image_info( &copts);
+            break;
+        case CMD_IMAGE_LIST:
+            rc = cli_execute_image_list(&transport, &copts);
+            break;
+        case CMD_IMAGE_TEST:
+            rc = cli_execute_image_test(&transport, &copts);
+            break;
+        case CMD_IMAGE_CONFIRM:
+            rc = cli_execute_image_confirm(&transport, &copts);
+            break;
+        case CMD_IMAGE_ERASE:
+            rc = cli_execute_image_erase(&transport, &copts);
+            break;
+        default:
+            fprintf(stderr, "Not implemented: %s\n", copts.cmd);
+            rc = 1;
+            break;
     }
 
 

@@ -14,6 +14,9 @@ extern "C" {
 #endif
 
 int cmd_img_run_image_list(struct smp_transport *transport, struct mgmt_image_state_rsp *rsp);
+int cmd_img_run_image_test(struct smp_transport *transport, struct mgmt_image_test_req *req, struct mgmt_image_state_rsp *rsp);
+int cmd_img_run_image_confirm(struct smp_transport *transport, struct mgmt_image_state_rsp *rsp);
+int cmd_img_run_image_erase(struct smp_transport *transport, struct mgmt_rc *rsp);
 
 #ifdef __cplusplus
 }
