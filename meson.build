@@ -21,15 +21,11 @@ common_cc_flags = [
     '-Werror=overflow',
     '-Werror=return-type',
     '-Werror=shift-count-overflow',
-    '-Werror=shift-overflow=2',
     '-Werror=undef',
     '-Werror=unused-function',
     '-Wfloat-equal',
-    '-Wimplicit-fallthrough=5',
     '-Winit-self',
-    '-Wlogical-op',
     '-Wmissing-include-dirs',
-    '-Wmissing-noreturn',
     '-Wnested-externs',
     '-Wold-style-definition',
     '-Wpointer-arith',
@@ -37,12 +33,33 @@ common_cc_flags = [
     '-Wshadow',
     '-Wstrict-aliasing=2',
     '-Wstrict-prototypes',
-    '-Wsuggest-attribute=noreturn',
     '-Wwrite-strings',
     '-Waddress-of-packed-member',
 ]
 
-# add_global_arguments(common_cc_flags, language: 'c')
+cc = meson.get_compiler('c')
+
+# some warning flags are compiler specific
+if cc.get_id() == 'clang'
+    extra_cc_flags = [
+        '-Werror=shift-overflow',
+        '-Wimplicit-fallthrough',
+        '-Wmissing-noreturn',
+    ]
+elif cc.get_id() == 'gcc'
+    extra_cc_flags = [
+        '-Werror=shift-overflow=2',
+        '-Wimplicit-fallthrough=5',
+        '-Wsuggest-attribute=noreturn',
+        '-Wlogical-op',
+    ]
+else
+    extra_cc_flags = []
+endif
+
+common_cc_flags += extra_cc_flags
+
+
 
 conf_data = configuration_data()
 
