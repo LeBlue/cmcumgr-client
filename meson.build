@@ -115,6 +115,7 @@ libmcumgr = static_library(
         'src/transport',
         'src'
     ],
+    c_args: common_cc_flags
 )
 
 mcumgr_dep = declare_dependency(
@@ -141,6 +142,7 @@ mcumgr = executable('mcumgr',
     dependencies: [ mcumgr_dep, utils_dep ],
     install : true,
     install_dir : bindir,
+    c_args: common_cc_flags,
 )
 
 
