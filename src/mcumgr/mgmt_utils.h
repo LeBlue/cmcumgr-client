@@ -26,6 +26,7 @@ void print_image_slot(struct mgmt_slot_state *slot);
 
 void print_image_slot_state(struct mgmt_image_state *slot_state);
 
+void mcuboot_image_info_print(const struct mcuboot_image *image_info);
 
 #ifdef _cplusplus
 }
