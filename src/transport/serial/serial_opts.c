@@ -3,11 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
+
 #define _XOPEN_SOURCE 500
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-
+#include <errno.h>
 
 #include "smp_serial.h"
 
@@ -29,7 +31,11 @@ int parse_serial_connstring(const char* connstring, struct serial_opts *ser_opts
     int speed;
     char *endptr = NULL;
 
-    subopts = connstring;
+    subopts = strdup(connstring);
+    if (!subopts) {
+        return -ENOMEM;
+    }
+
     while (*subopts != '\0' && !errfnd) {
 
         switch (getsubopt(&subopts, (char *const *) token, &value)) {

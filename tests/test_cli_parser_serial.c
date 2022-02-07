@@ -32,8 +32,6 @@ void test_cli_parse_serial_connstring(void)
     PT_ASSERT(ser_opts.port_name != NULL);
     if (ser_opts.port_name)
         PT_ASSERT_STR_EQ("/dev/ttyUSB0", ser_opts.port_name);
-    /* TODO: parsing connstring modifies argv */
-    //check_shuffle(argc, argv, args);
 }
 
 
