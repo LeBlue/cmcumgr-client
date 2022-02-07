@@ -17,7 +17,7 @@
 #include "mgmt_os.h"
 
 
-#define PRDBG 1
+#define PRDBG 0
 #if PRDBG
 #include <stdio.h>
 #define DBG(fmt, args...) do { fprintf(stderr, "dbg: " fmt, ##args); } while (0)

@@ -28,7 +28,7 @@
 #include "serial_port.h"
 #include "smp_serial.h"
 
-#define PRDBG 1
+#define PRDBG 0
 #if PRDBG
 #include <stdio.h>
 #define DBG(fmt, args...) do { fprintf(stderr, "dbg: " fmt, ##args); } while (0)
@@ -165,9 +165,9 @@ int serial_transport_write(struct smp_transport *transport, uint8_t *buf, size_t
 }
 
 
-static int smp_pkt_check_crc(uint8_t *buf, size_t pktlen, int verbose) {
+static int smp_pkt_check_crc(uint8_t *buf, size_t pktlen, int verbose)
+{
     uint16_t crc_c;
-    ehexdump(buf, pktlen, "CRC of");
 
     crc_c = crc16_ccitt(CRC16_INITIAL_CRC, buf, pktlen);
     if (verbose) {
@@ -219,7 +219,6 @@ static int smp_find_frame_start(uint8_t *rxbuf, size_t rxoff, int bytes_read)
         memmove(rxbuf, rxbuf + soffset, rxoff + bytes_read);
         DBG("Discard: %d, RC end: %d\n", (int) soffset, (int)(rxoff + bytes_read));
     }
-    ehexdump(&rxbuf[0], rxoff + bytes_read, "RX read");
     return bytes_read;
 }
 
@@ -239,8 +238,6 @@ static int smp_read_pkt_len(uint8_t *rxbuf, uint8_t *decbuf)
     /* decode pktlen only, frame offset 2 */
     memcpy(pktlen_buf, rxbuf + 2, 4);
     pktlen_buf[4] = '\0';
-
-    ehexdump(pktlen_buf, 4, "PKTLEN");
 
     drc = base64_decode((char*)pktlen_buf, decbuf);
     pktlen = get_be16(decbuf);
@@ -284,8 +281,6 @@ static int serial_transport_read(struct smp_transport *transport, uint8_t *buf, 
 
     int tmo = transport->timeout;
 
-    transport->verbose = 2;
-
     DBG("Read: maxlen: %zu\n", maxlen);
 
     now = time_get();
@@ -312,7 +307,6 @@ static int serial_transport_read(struct smp_transport *transport, uint8_t *buf, 
         if (rc < 0) {
             break;
         }
-        ehexdump(&rxbuf[rxoff], rc, "RXed");
 
         if (rxoff < 2) {
             rc = smp_find_frame_start(rxbuf, rxoff, rc);
@@ -353,8 +347,6 @@ static int serial_transport_read(struct smp_transport *transport, uint8_t *buf, 
                 } else if (frame_start == MCUMGR_SHELL_HDR_DATA) {
                     dec_len = boff;
                     soff = sizeof(frame_start);
-
-                    ehexdump(rxbuf, len, "RX frag");
 
                     drc = base64_decode((char*)&rxbuf[soff], buf + boff);
 
@@ -404,7 +396,6 @@ static int serial_transport_read(struct smp_transport *transport, uint8_t *buf, 
             }
             DBG("Frame completed\n");
             rxoff = 0;
-            // soff += len;
         }
         DBG("Reread\n");
     }
