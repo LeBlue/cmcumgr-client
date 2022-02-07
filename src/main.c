@@ -82,9 +82,48 @@ void print_usage_or_error(struct cli_options *copts, int rc)
 
 void print_mgmt_error(uint64_t mgmt_rc)
 {
-    fprintf(stdout, "MgmtError: %ld\n", mgmt_rc);
-}
+    const char *mgmt_rc_str;
 
+    switch (mgmt_rc) {
+        case MGMT_ERR_EOK:
+            mgmt_rc_str = "OK";
+            break;
+        case MGMT_ERR_EUNKNOWN:
+            mgmt_rc_str = "EUNKNOWN";
+            break;
+        case MGMT_ERR_ENOMEM:
+            mgmt_rc_str = "ENOMEM";
+            break;
+        case MGMT_ERR_EINVAL:
+            mgmt_rc_str = "EINVAL";
+            break;
+        case MGMT_ERR_ETIMEOUT:
+            mgmt_rc_str = "ETIMEOUT";
+            break;
+        case MGMT_ERR_ENOENT:
+            mgmt_rc_str = "ENOENT";
+            break;
+        case MGMT_ERR_EBADSTATE:
+            mgmt_rc_str = "EBADSTATE";
+            break;
+        case MGMT_ERR_EMSGSIZE:
+            mgmt_rc_str = "EMSGSIZE";
+            break;
+        case MGMT_ERR_ENOTSUP:
+            mgmt_rc_str = "ENOTSUP";
+            break;
+        case MGMT_ERR_ECORRUPT:
+            mgmt_rc_str = "ECORRUPT";
+            break;
+        default:
+            break;
+    }
+    if (mgmt_rc_str) {
+        fprintf(stdout, "MgmtError: %ld, %s\n", mgmt_rc, mgmt_rc_str);
+    } else {
+        fprintf(stdout, "MgmtError: %ld\n", mgmt_rc);
+    }
+}
 
 
 int cli_execute_reset(struct smp_transport *transport)
