@@ -113,7 +113,7 @@ ssize_t mgmt_create_image_test_req(uint8_t *buf, size_t sz, struct mgmt_image_te
 
 	if (req->confirm) {
 		rc |= cbor_encode_text_stringz(&map, "confirm");
-		rc |= cbor_encode_boolean(&map, true);
+		rc |= cbor_encode_boolean(&map, req->confirm);
 	}
 
 	rc |= cbor_encoder_close_container(&enc, &map);

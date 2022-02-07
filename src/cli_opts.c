@@ -316,6 +316,9 @@ int parse_image_opts(struct cli_options *copts)
         } else if (!strcmp("analyze", copts->cmd)) {
             copts->subcmd = CMD_IMAGE_INFO;
             return parse_commmon_positional_args(copts, 1);
+        } else if (!strcmp("erase", copts->cmd)) {
+            copts->subcmd = CMD_IMAGE_ERASE;
+            return parse_common_options(copts);
         } else if (!strcmp("test", copts->cmd)) {
             copts->subcmd = CMD_IMAGE_TEST;
             return parse_image_test_opts(copts);
