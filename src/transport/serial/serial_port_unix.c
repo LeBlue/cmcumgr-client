@@ -30,7 +30,7 @@
 #include "serial_port.h"
 #include "utils.h"
 
-#if __linux__
+#ifdef __linux__
 #include <libgen.h>
 
 static char *devname;
@@ -72,7 +72,7 @@ int port_open(const char *name)
         fd = -errno;
         fprintf(stderr, "port %s open failed\n", name);
     }
-#if __linux__
+#ifdef __linux__
     port_open_storename(name);
 #endif
     return fd;
@@ -149,7 +149,7 @@ int port_setup(int fd, unsigned long speed)
         fprintf(stderr, "tcsetattr() fail: %s\n", strerror(errno));
         return rc;
     }
-#if __linux__
+#ifdef __linux__
     if (0)
         port_setup_lowlatency("1");
 #endif
