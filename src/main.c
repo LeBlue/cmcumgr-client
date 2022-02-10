@@ -316,6 +316,7 @@ main(int argc, char **argv)
             goto cleanup_transport;
         }
         transport.verbose = copts.verbose;
+        transport.timeout = copts.timeout;
     }
 
     if (copts.subcmd != CMD_IMAGE_INFO) {

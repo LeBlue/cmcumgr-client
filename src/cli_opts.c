@@ -68,7 +68,28 @@ static const char* get_optarg(const char *arg)
     return (arg + 1);
 }
 
-#define COMMON_OPTS "h"
+/**
+ * @brief get integer from option arg
+ *
+ * @param arg  option arg string
+ * @param num  where to save parsed integer
+ *
+ * @return 0 on success, -EINVAL otherwise
+ */
+static int get_int_optarg(const char *arg, int *num)
+{
+    const char *numstr = get_optarg(arg);
+    if (!numstr) {
+        return -EINVAL;
+    }
+    int ret = scanf("%d", num);
+    if (ret == 1) {
+        return 0;
+    }
+    return -EINVAL;
+}
+
+#define COMMON_OPTS "ht:"
 
 
 #define UNRECOGNIZED_OPTION -ENOENT
@@ -96,11 +117,19 @@ int assign_common_opts(struct cli_options *copts, int optc)
         case 'h':
             copts->help = 1;
             return 0;
+        case 't':
+        {
+            int ret = get_int_optarg(optarg, &copts->timeout);
+            if (ret) {
+                copts->optopt = optc;
+            }
+            return ret;
+        }
         case '?':
             copts->optopt = optopt;
-            return -ENOENT;
+            return UNRECOGNIZED_OPTION;
         case ':':
-            return -ENODATA;
+            return MISSING_ARGUMENT;
         default:
             return -EINVAL;
     }
@@ -166,7 +195,6 @@ static int parse_commmon_positional_args(struct cli_options *copts, int nargs)
 
     /* got pos arg */
     for (argn = 0; copts->argc > 0 && argn < nargs; argn++) {
-        // copts->cmdopts.os_echo.echo_str = copts->argv[0];
         copts->cmdopts.positional.arg[argn] = copts->argv[0];
         copts->argc--;
         copts->argv++;
@@ -185,70 +213,12 @@ static int parse_commmon_positional_args(struct cli_options *copts, int nargs)
 
 int parse_echo_opts(struct cli_options *copts)
 {
-    int ret;
-
-    if (!copts || copts->subcmd != CMD_ECHO) {
-        return -EINVAL;
-    }
-
-    if ((ret = parse_common_options(copts))) {
-        return ret;
-    }
-
-    /* got echo string */
-    if (copts->argc > 0) {
-        copts->cmdopts.os_echo.echo_str = copts->argv[0];
-        copts->argc--;
-        copts->argv++;
-    }
-    /* unxpected arg */
-    if (copts->argc > 0) {
-        return ACCESS_ARGUMENTS;
-    }
-    copts->argv = NULL;
-    return 0;
+    return parse_commmon_positional_args(copts, 1);
 }
 
 int parse_analyze_opts(struct cli_options *copts)
 {
-    if (!copts || copts->subcmd != CMD_IMAGE_INFO) {
-        return -EINVAL;
-    }
-    int argc = copts->argc;
-    char *const *argv = copts->argv;
-
-    int opt;
-
-    opterr = 0;
-    optind = 1;
-
-    while ((opt = getopt(argc, argv, OPTSTR "h")) != -1) {
-        switch (opt) {
-            case 'h':
-                copts->help = 1;
-                break;
-            case '?':
-                /* unrecognized option */
-                copts->optopt = optopt;
-                return UNRECOGNIZED_OPTION;
-            case ':':
-                /* missing required arg */
-                copts->optopt = optopt;
-                return MISSING_ARGUMENT;
-            default: /* bug: missing case */
-                return -EINVAL;
-        }
-    }
-
-    /* got filename */
-    if (argc > optind) {
-        copts->cmdopts.analyze.file_name = argv[optind];
-    }
-    /* unxpected arg */
-    if (argc > (optind + 1)) {
-        return ACCESS_ARGUMENTS;
-    }
-    return 0;
+    return parse_commmon_positional_args(copts, 1);
 }
 
 
@@ -369,6 +339,7 @@ int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
     opterr = 0;
     optind = 1;
     copts->prgname = argv[0];
+    copts->timeout = 3;
 
 
     while ((opt = getopt(argc, argv, OPTSTR "c:hs:t:vV")) != -1) {
@@ -403,7 +374,6 @@ int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
                 copts->optopt = optopt;
                 return MISSING_ARGUMENT;
             default: /* '?' */
-                // usage_common(argv[0]);
                 return -EINVAL;
         }
     }
@@ -423,12 +393,9 @@ int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
             return parse_image_opts(copts);
         } else if (!strcmp("analyze", copts->cmd)) {
             copts->subcmd = CMD_IMAGE_INFO;
-            // return parse_analyze_opts(copts);
             return parse_commmon_positional_args(copts, 1);
-
         } else if (!strcmp("echo", copts->cmd)) {
             copts->subcmd = CMD_ECHO;
-            // return parse_echo_opts(copts);
             return parse_commmon_positional_args(copts, 1);
         } else if (!strcmp("reset", copts->cmd)) {
             copts->subcmd = CMD_RESET;
@@ -447,5 +414,3 @@ int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
 
     return 0;
 }
-
-

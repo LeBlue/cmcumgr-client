@@ -867,8 +867,9 @@ void test_cli_parse_analyze(void)
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[1]);
     PT_ASSERT(copts.subcmd == CMD_IMAGE_INFO);
-    if (copts.cmd)
+    if (copts.cmd) {
         PT_ASSERT_STR_EQ("analyze", copts.cmd);
+    }
 
     /* all args consumed */
     PT_ASSERT(copts.argc == 0);
@@ -876,18 +877,12 @@ void test_cli_parse_analyze(void)
 
     check_shuffle(argc, argv, args);
 
-    if (copts.subcmd == CMD_IMAGE_INFO) {
-        rc = parse_analyze_opts(&copts);
-
-        PT_ASSERT(rc == 0);
-        PT_ASSERT(copts.help == 0);
-        PT_ASSERT(copts.cmd == argv[1]);
-        PT_ASSERT(copts.cmdopts.analyze.file_name != NULL);
-        if (copts.cmdopts.analyze.file_name)
-            PT_ASSERT_STR_EQ("some_file.bin", copts.cmdopts.analyze.file_name);
-
-
-        check_shuffle(argc, argv, args);
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.help == 0);
+    PT_ASSERT(copts.cmd == argv[1]);
+    PT_ASSERT(copts.cmdopts.analyze.file_name != NULL);
+    if (copts.cmdopts.analyze.file_name) {
+        PT_ASSERT_STR_EQ("some_file.bin", copts.cmdopts.analyze.file_name);
     }
 
     free(argv);

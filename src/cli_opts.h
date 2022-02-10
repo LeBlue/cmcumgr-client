@@ -46,6 +46,7 @@ struct cli_options {
     int version;
     int verbose;
     char optopt;
+    int timeout;
 
     /* command string and index in original argv */
     const char *cmd;
