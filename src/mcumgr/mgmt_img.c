@@ -108,7 +108,7 @@ ssize_t mgmt_create_image_test_req(uint8_t *buf, size_t sz, struct mgmt_image_te
 	mgmt_cbor_encoder_init(&enc, buf, sz);
 
 	rc = cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
-	rc |= cbor_encode_text_stringz(&map, "sha");
+	rc |= cbor_encode_text_stringz(&map, "hash");
 	rc |= cbor_encode_byte_string(&map, req->fw_sha, 32);
 
 	if (req->confirm) {

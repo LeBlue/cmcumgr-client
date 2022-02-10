@@ -488,12 +488,8 @@ void test_encode_mgmt_img_state_set_test(void)
     uint8_t buf[CBOR_BUF_SZ + 1];
     memset(buf, 0, sizeof(buf));
 
-    /* const uint8_t hash[32] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
-                             "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"; */
-    const uint8_t msg[48] = "\x02\x00\x00\x28\x00\x01\x00\x00"
-                            "\xbf" "cshaX" "\x20"
-                            /* "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
-                            "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f" */
+    const uint8_t msg[49] = "\x02\x00\x00\x29\x00\x01\x00\x00"
+                            "\xbf" "dhashX" "\x20"
                             "0123456789ABCDEF" "0123456789ABCDEF"
                             "\xff";
 
@@ -515,14 +511,10 @@ void test_encode_mgmt_img_state_set_test_confirm(void)
     size_t cnt;
     uint8_t buf[CBOR_BUF_SZ + 1];
     memset(buf, 0, sizeof(buf));
-    /* const uint8_t hash[32] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
-                             "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"; */
 
-    const uint8_t msg[57] = "\x02\x00\x00\x31\x00\x01\x00\x00"
+    const uint8_t msg[58] = "\x02\x00\x00\x32\x00\x01\x00\x00"
                             "\xbf"
-                                "cshaX" "\x20"
-                                /* "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
-                                "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f" */
+                                "dhashX" "\x20"
                                 "0123456789ABCDEF" "0123456789ABCDEF"
                                 "gconfirm" "\xf5"
                             "\xff";
