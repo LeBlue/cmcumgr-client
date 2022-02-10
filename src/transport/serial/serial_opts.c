@@ -21,7 +21,7 @@ int parse_serial_connstring(const char* connstring, struct serial_opts *ser_opts
     };
     const char *const token[] = {
         [DEV_OPT]   = "dev",
-        [SPEED_OPT] = "baudrate",
+        [SPEED_OPT] = "baud",
         NULL
     };
 
@@ -47,26 +47,22 @@ int parse_serial_connstring(const char* connstring, struct serial_opts *ser_opts
                 if (value == NULL) {
                     fprintf(stderr, "Missing value for "
                     "suboption '%s'\n", token[SPEED_OPT]);
-                    errfnd = 1;
-                    continue;
+                    return -EINVAL;
                 }
 
                 speed = strtol(value, &endptr, 10);
                 if (*endptr != '\0') {
                     fprintf(stderr, "Not a number: %s\n", value);
-                    return -1;
+                    return -EINVAL;
                 }
                 ser_opts->speed = speed;
                 break;
 
             default:
                 fprintf(stderr, "No match found for suboption: '%s'\n", value);
-                errfnd = 1;
-                break;
+                return -EINVAL;
         }
     }
-    if (errfnd)
-        return -1;
 
     return 0;
 }

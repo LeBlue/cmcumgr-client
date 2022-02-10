@@ -19,12 +19,12 @@ void test_cli_parse_serial_connstring(void)
 {
     int rc;
     const char args[] = {
-        "dev=/dev/ttyUSB0,baudrate=230400",
+        "dev=/dev/ttyUSB0,baud=230400",
     };
     char connstring[sizeof(args)];
     memcpy(connstring, args, sizeof(args));
 
-    PT_ASSERT_STR_EQ("dev=/dev/ttyUSB0,baudrate=230400", connstring);
+    PT_ASSERT_STR_EQ("dev=/dev/ttyUSB0,baud=230400", connstring);
     struct serial_opts ser_opts;
     rc = parse_serial_connstring(connstring, &ser_opts);
     PT_ASSERT(rc == 0);
@@ -39,7 +39,7 @@ void suite_cli_parse_serial(void)
 {
     const char *sn =  "Suite CLI parsing";
 
-    pt_add_test(test_cli_parse_serial_connstring, "Test parsing serial connstring: dev=/dev/ttyUSB0,baudrate=230400", sn);
+    pt_add_test(test_cli_parse_serial_connstring, "Test parsing serial connstring: dev=/dev/ttyUSB0,baud=230400", sn);
 }
 
 int main(int argc, char** argv)
