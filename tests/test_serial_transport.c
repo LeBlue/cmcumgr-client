@@ -14,6 +14,7 @@
 #include "utils_test.h"
 
 #include "smp_serial.h"
+#include "smp_transport.h"
 
 /* mock serial port */
 #include "serial_port.h"
