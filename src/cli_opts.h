@@ -62,6 +62,8 @@ struct cli_options {
         /* image */
         struct mgmt_image_test_req img_test;
 
+        struct mgmt_image_upload_req img_upload;
+
         struct cmd_analyze_opts analyze;
     } cmdopts;
 };

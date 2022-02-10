@@ -260,6 +260,18 @@ static int parse_image_test_opts(struct cli_options *copts)
     return 0;
 }
 
+static int parse_image_upload_opts(struct cli_options *copts)
+{
+    int ret;
+
+    if ((ret = parse_commmon_positional_args(copts, 1))) {
+        return ret;
+    }
+
+    return ret;
+}
+
+
 int parse_image_opts(struct cli_options *copts)
 {
     int ret;
@@ -295,6 +307,9 @@ int parse_image_opts(struct cli_options *copts)
         } else if (!strcmp("confirm", copts->cmd)) {
             copts->subcmd = CMD_IMAGE_CONFIRM;
             return parse_common_options(copts);
+        } else if (!strcmp("upload", copts->cmd)) {
+            copts->subcmd = CMD_IMAGE_UPLOAD;
+            return parse_image_upload_opts(copts);
         } else {
             copts->subcmd = CMD_NONE;
             return UNRECOGNIZED_OPTION;

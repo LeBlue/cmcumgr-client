@@ -277,6 +277,56 @@ int cli_execute_image_erase(struct smp_transport *transport, struct cli_options 
     return rc;
 }
 
+static void upload_progress_cb(struct upload_progress *progress)
+{
+    printf("%d/%d (%d)\n", progress->off, progress->size, progress->percent);
+}
+
+
+int cli_execute_image_upload(struct smp_transport *transport, struct cli_options *copts)
+{
+    struct mgmt_rc rsp;
+    int rc;
+    struct mgmt_image_upload_req *req;
+
+    struct file_unix_handle fh;
+    const char *fw_file = copts->cmdopts.analyze.file_name;
+
+    req = &copts->cmdopts.img_upload;
+
+    rc = file_unix_init(&req->reader, &fh, fw_file);
+
+    if (rc) {
+        fprintf(stderr, "Failed to read %s: %s\n", fw_file, strerror(-rc));
+        return rc;
+    }
+    rc = mcuboot_image_file_parse(&req->reader, &req->image);
+
+    if (rc) {
+        if (rc == -ENODATA) {
+            fprintf(stderr, "Invalid file: %s\n", fw_file);
+        } else {
+            fprintf(stderr, "Failed to open file '%s': %s\n", fw_file, strerror(-rc));
+        }
+        return rc;
+    }
+
+    printf("Uploading:\n");
+    mcuboot_image_info_print(&req->image);
+
+    rc = cmd_img_run_image_upload(transport, req, &rsp, upload_progress_cb);
+
+    if (rc == 0) {
+        if (rsp.mgmt_rc == 0) {
+            printf("Done\n");
+        } else {
+            print_mgmt_error(rsp.mgmt_rc);
+        }
+    } else {
+        fprintf(stderr, "Failed to upload image: %s\n", strerror(-rc));
+    }
+    return rc;
+}
 
 
 int
@@ -336,8 +386,9 @@ main(int argc, char **argv)
         case CMD_ECHO:
             rc = cli_execute_echo(&transport, &copts);
             break;
-        /* case CMD_IMAGE_UPLOAD:
-            break; */
+        case CMD_IMAGE_UPLOAD:
+            rc = cli_execute_image_upload(&transport, &copts);
+            break;
         case CMD_IMAGE_INFO:
             rc = cli_execute_image_info( &copts);
             break;

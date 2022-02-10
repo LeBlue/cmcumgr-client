@@ -71,6 +71,9 @@ struct mgmt_image_upload_req {
     struct file_reader reader;
 };
 
+// ssize_t mgmt_create_image_upload_seg0_req(uint8_t *buf, size_t sz, size_t fw_sz, const uint8_t *fw_data, const uint8_t *fw_sha, size_t seglen);
+// ssize_t mgmt_create_image_upload_segX_req(uint8_t *buf, size_t sz, size_t off, const uint8_t *fw_data, size_t seglen);
+
 ssize_t mgmt_create_image_upload_seg0_req(uint8_t *buf, size_t sz, size_t fw_sz, const uint8_t *fw_data, const uint8_t *fw_sha, size_t seglen);
 ssize_t mgmt_create_image_upload_segX_req(uint8_t *buf, size_t sz, size_t off, const uint8_t *fw_data, size_t seglen);
 
