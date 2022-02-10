@@ -752,24 +752,15 @@ void test_mgmt_img_state_parse(void)
         { "slot": 0, "version": "1.2.3", "hash": hash, "bootable": True, "permanent": True, "confirmed":  True, "active": True, "pending": False  }
         { "slot": 1, "version": "1.2.3", "hash": hash, "bootable": True, "permanent": False, "confirmed": False, "active": False, "pending": False }
      }
-
-
-
      */
-    // int64_t mgmt_err;
-    // struct mgmt_image_state state;
     struct mgmt_image_state_rsp rsp;
 
-// int mgmt_img_decode_state_rsp(const uint8_t *buf, size_t sz, struct mgmt_image_state_rsp *rsp);
-    // int ret = mgmt_img_decode_state_rsp(slot_state, sizeof(slot_state) - 1, &mgmt_err, &state);
     int ret = mgmt_img_decode_list_rsp(slot_state, sizeof(slot_state) - 1, &rsp);
 
     PT_ASSERT(ret == 0);
-    printf("\nret = %d\n", ret);
     PT_ASSERT(rsp.mgmt_rc == 0);
 
     struct mgmt_slot_state *slot;
-    // slot = &state.slot[0];
     slot = rsp.state.slot;
     PT_ASSERT(slot[0].slot == 0);
     PT_ASSERT(slot[0].version.major == 1);

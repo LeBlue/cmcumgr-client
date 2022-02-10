@@ -234,8 +234,6 @@ void test_smp_serial_read(void)
     int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
-    printf("\nRC: %d\n", rc);
-
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
 }
 
@@ -258,8 +256,6 @@ void test_smp_serial_read_wrong_pktlen(void)
     int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
-    printf("\nRC: %d\n", rc);
-
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
 }
 
@@ -306,9 +302,6 @@ void test_smp_serial_read_garbage_before(void)
     int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
-    printf("\nRC: %d\n", rc);
-    printf("\n%zu\n", serial_state.rx_off);
-
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
 }
 
@@ -336,9 +329,6 @@ void test_smp_serial_read_chunked(void)
     int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
-    printf("\nRC: %d\n", rc);
-    printf("\n%zu\n", serial_state.rx_off);
-
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
 }
 
@@ -368,9 +358,6 @@ void test_smp_serial_read_chunked_unaligned(void)
     int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
-    printf("\nRC: %d\n", rc);
-    printf("\n%zu\n", serial_state.rx_off);
-
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
 }
 
@@ -395,9 +382,6 @@ void test_smp_serial_read_fragmented(void)
                                     "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
 
 
-
-
-
     mock_serial_port_init();
 
     mock_add_rx_chunk(rx_enc_data1, sizeof(rx_enc_data1));
@@ -407,10 +391,8 @@ void test_smp_serial_read_fragmented(void)
     int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
-    printf("\nRC: %d\n", rc);
-    printf("\n%zu\n", serial_state.rx_off);
 
-    // PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
 }
 
 
