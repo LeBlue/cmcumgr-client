@@ -172,6 +172,7 @@ int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *i
     mcuboot_image_get_version(&img_hdr, &image_info->version);
 
     image_info->img_sz = mcuboot_image_get_image_size(&img_hdr);
+    image_info->file_sz = sizeof(img_hdr) + image_info->img_sz;
 
     /* read TLV info */
     uint32_t tlv_info_offset = mcuboot_image_get_tlv_offset(&img_hdr);
@@ -181,7 +182,7 @@ int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *i
     rc = reader->op->read(reader->fh, (uint8_t*) &tlv_info, &readlen, tlv_info_offset);
     if (rc < 0) {
         goto err_close;
-    } else if (readlen) {
+    } else if (rc < (int)sizeof(tlv_info)) {
         rc = -ENODATA;
         goto err_close;
     }
@@ -193,6 +194,7 @@ int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *i
 
     uint32_t tlv_end = tlv_info_offset + tlv_info_size;
     uint32_t tlv_off = tlv_info_offset + sizeof(tlv_info);
+    image_info->file_sz = tlv_off;
 
     /* loop over TLV entries */
     while (tlv_off < tlv_end) {
@@ -201,7 +203,7 @@ int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *i
         rc = reader->op->read(reader->fh, (uint8_t*) &tlv_hdr, &readlen, tlv_off);
         if (rc < 0) {
             goto err_close;
-        } else if (readlen) {
+        } else if (rc < (int)sizeof(tlv_hdr)) {
             rc = -ENODATA;
             goto err_close;
         }
@@ -209,6 +211,7 @@ int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *i
 
         /* advance to data */
         tlv_off += sizeof(tlv_hdr);
+        image_info->file_sz += sizeof(tlv_hdr);
 
         switch (tlv_hdr_type(&tlv_hdr)) {
             case IMAGE_TLV_SHA256:
@@ -218,31 +221,39 @@ int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *i
                     rc = reader->op->read(reader->fh, image_info->hash, &readlen, tlv_off);
                     if (rc < 0) {
                         goto err_close;
-                    } else if (readlen) {
+                    } else if (rc < tlv_data_len) {
                         rc = -ENODATA;
                         goto err_close;
                     }
-                    /* no need to keep going, only need hash */
-                    reader->op->close(reader->fh);
-                    return 0;
                 } else {
                     rc = -ENODATA;
                     goto err_close;
                 }
                 break;
             }
-            /* no other decoding needed/supported */
+            /* no other decoding needed/supported, read and skip to validate tlv entries are complete */
             default:
+                if (tlv_data_len > 0) {
+                    uint8_t tmpbuf;
+                    readlen = 1;
+                    rc = reader->op->read(reader->fh, &tmpbuf, &readlen, tlv_off + tlv_data_len - 1);
+                    if (rc < 0) {
+                        goto err_close;
+                    } else if (rc < 1) {
+                        rc = -ENODATA;
+                        goto err_close;
+                    }
+                }
                 break;
         }
         /* advance to next entry */
         tlv_off += tlv_data_len;
+        image_info->file_sz += tlv_data_len;
     }
-    rc = -ENODATA;
 
+    rc = 0;
 err_close:
     reader->op->close(reader->fh);
 
     return rc;
 }
-

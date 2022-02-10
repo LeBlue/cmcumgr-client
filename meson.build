@@ -196,6 +196,7 @@ if get_option('enable-tests') == true
         dependencies: [ ptest_dep, utils_dep ],
     )
     configure_file(copy: true, input: 'tests/mcuboot_image.bin', output: 'mcuboot_image.bin')
+    configure_file(copy: true, input: 'tests/mcuboot_image_trunc_1.bin', output: 'mcuboot_image_trunc_1.bin')
     test('test-mcuboot-image-parser', test_mcuboot_img_parser)
 
     test_cbor = executable('test-cbor',

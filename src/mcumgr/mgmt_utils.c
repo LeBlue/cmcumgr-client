@@ -87,7 +87,7 @@ void mcuboot_image_info_print(const struct mcuboot_image *image_info)
     image_version_to_str(version_buf, &image_info->version);
     image_hash_to_str(hash_buf, image_info->hash);
 
-    printf("version:%s hash:%s size:%d\n", version_buf, hash_buf, image_info->img_sz);
+    printf("version:%s hash:%s size:%d filesize:%d\n", version_buf, hash_buf, image_info->img_sz, image_info->file_sz);
 }
 
 void print_image_slot(struct mgmt_slot_state *slot)

@@ -12,7 +12,8 @@ struct file_reader;
 
 struct mcuboot_image {
     struct image_version version;
-    uint32_t img_sz;
+    uint32_t img_sz; /* does not include headers and TLV */
+    uint32_t file_sz; /* whole image file size */
     uint8_t magic_ok;
     uint8_t hash[32];
 };
