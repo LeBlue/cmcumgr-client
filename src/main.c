@@ -286,7 +286,7 @@ main(int argc, char **argv)
 
     struct cli_options copts;
     struct serial_opts sopts;
-    struct smp_transport transport;
+    struct smp_transport transport = {0};
     struct smp_serial_handle serial_handle;
 
 
@@ -360,7 +360,7 @@ main(int argc, char **argv)
 
 
 cleanup_transport:
-    if (transport.ops) {
+    if (transport.ops && transport.hd) {
         transport.ops->close(&transport);
     }
 
