@@ -71,6 +71,17 @@ ssize_t mgmt_create_os_reset_req(uint8_t *buf, size_t sz)
 	return mgmt_create_generic_no_data_req(buf, sz, MGMT_OP_WRITE, MGMT_GROUP_ID_OS, OS_MGMT_ID_RESET);
 }
 
-int mgmt_os_reset_decode_rsp(uint8_t *buf, size_t sz, struct mgmt_rc *rsp) {
-    return mgmt_decode_err_rsp(buf, sz, &rsp->mgmt_rc);
+int mgmt_os_reset_decode_rsp(uint8_t *buf, size_t sz, struct mgmt_rc *rsp)
+{
+	int ret = mgmt_decode_err_rsp(buf, sz, &rsp->mgmt_rc);
+
+	/* ret == 1: rc is not present in response */
+	if (!ret || ret != 1) {
+		return ret;
+	}
+	/* RC is only set on error, not on success. Set it in this case to success. */
+	if (rsp->mgmt_rc < 0) {
+		rsp->mgmt_rc = 0;
+	}
+	return 0;
 }
