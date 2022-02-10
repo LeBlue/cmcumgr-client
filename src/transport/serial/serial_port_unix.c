@@ -144,7 +144,7 @@ int port_setup(int fd, unsigned long speed)
         return rc;
     }
 
-    rc = tcsetattr(fd, TCSAFLUSH, &tios);
+    rc = tcsetattr(fd, TCSANOW, &tios);
     if (rc < 0) {
         fprintf(stderr, "tcsetattr() fail: %s\n", strerror(errno));
         return rc;
