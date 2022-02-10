@@ -82,7 +82,7 @@ void print_usage_or_error(struct cli_options *copts, int rc)
 
 void print_mgmt_error(uint64_t mgmt_rc)
 {
-    const char *mgmt_rc_str;
+    const char *mgmt_rc_str = NULL;
 
     switch (mgmt_rc) {
         case MGMT_ERR_EOK:
