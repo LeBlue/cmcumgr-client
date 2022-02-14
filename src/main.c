@@ -119,9 +119,9 @@ void print_mgmt_error(uint64_t mgmt_rc)
             break;
     }
     if (mgmt_rc_str) {
-        fprintf(stdout, "MgmtError: %ld, %s\n", mgmt_rc, mgmt_rc_str);
+        fprintf(stdout, "MgmtError: %" PRId64 ", %s\n", mgmt_rc, mgmt_rc_str);
     } else {
-        fprintf(stdout, "MgmtError: %ld\n", mgmt_rc);
+        fprintf(stdout, "MgmtError: %" PRId64 "\n", mgmt_rc);
     }
 }
 
