@@ -48,6 +48,10 @@ ssize_t mgmt_create_os_echo_req(uint8_t *buf, size_t sz, const struct mgmt_echo_
 
 int mgmt_os_echo_decode_rsp(const uint8_t *buf, size_t sz, struct mgmt_echo_rsp *rsp)
 {
+	if (!mgmt_header_is_rsp_to(buf, sz, MGMT_GROUP_ID_OS, OS_MGMT_ID_ECHO)) {
+		return -ENOMSG;
+	}
+
 	int ret = mgmt_decode_err_rsp(buf, sz, &rsp->mgmt_rc);
 
     if (ret < 0 || (ret == 0 && rsp->mgmt_rc != 0)) {

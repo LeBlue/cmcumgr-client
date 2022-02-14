@@ -394,6 +394,11 @@ int mgmt_img_decode_state_rsp(const uint8_t *buf, size_t sz, int64_t *mgmt_err, 
 		return -EPROTO;
 	}
 
+	rc = mgmt_header_check_rsp(buf, sz, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ID_STATE);
+	if (rc) {
+		return rc;
+	}
+
 	mgmt_header_advance(&buf, &sz);
 
 	rc = mgmt_cbor_parser_init_enter_map(buf, sz, &parser, &map_val, &val);
@@ -628,10 +633,17 @@ int mgmt_img_upload_decode_rsp(const uint8_t *buf, size_t sz, size_t *off, struc
 	int64_t val64;
 	int64_t rsp_off = 0;
 
-	rc = mgmt_header_len_check_and_advance(&buf, &sz);
+	rc = mgmt_header_len_check(buf, sz);
 	if (rc) {
 		return rc;
 	}
+
+	rc = mgmt_header_check_rsp(buf, sz, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ID_UPLOAD);
+	if (rc) {
+		return rc;
+	}
+
+	mgmt_header_advance(&buf, &sz);
 
 	rc = mgmt_cbor_parser_init_enter_map(buf, sz, &parser, &map_val, &val);
 	if (rc) {
