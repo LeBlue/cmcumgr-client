@@ -23,6 +23,16 @@ static const char *version = VERSION;
 static const char *version = "0.0.0";
 #endif
 
+void reset_getopt(void)
+{
+#ifdef __GLIBC__
+    optind = 0;
+#else
+    optind = 1;
+#endif
+}
+
+
 int usage_common(const char *prgname)
 {
     fprintf(stderr, "%s %s\n", prgname, version);
@@ -100,6 +110,17 @@ static int get_int_optarg(const char *arg, int *num)
 #define INVALID_ARGUMENT -EBADMSG
 
 
+struct subcmd {
+    enum subcommand cmd;
+    const char *name;
+    int (*optparser)(struct cli_options *);
+};
+
+#define SUB_CMD(_name, _subcmd, _parse_fn) \
+    { .cmd = _subcmd, .name = _name, .optparser = _parse_fn }
+
+
+
 /**
  * @brief Check for common options
  *
@@ -154,7 +175,7 @@ static int parse_common_options(struct cli_options *copts)
     int opt;
 
     opterr = 0;
-    optind = 1;
+    reset_getopt();
 
     if (!copts || copts->argc < 1 || !copts->argv) {
         return -EINVAL;
@@ -222,13 +243,9 @@ int parse_analyze_opts(struct cli_options *copts)
 }
 
 
-int parse_reset_opts(struct cli_options *copts)
+int parse_common_options_no_args(struct cli_options *copts)
 {
     int ret;
-
-    if (!copts || copts->subcmd != CMD_RESET) {
-        return -EINVAL;
-    }
 
     if ((ret = parse_common_options(copts))) {
         return ret;
@@ -272,6 +289,31 @@ static int parse_image_upload_opts(struct cli_options *copts)
 }
 
 
+static const struct subcmd imgcmds[] = {
+    SUB_CMD("list", CMD_IMAGE_LIST, parse_common_options_no_args),
+    SUB_CMD("analyze", CMD_IMAGE_INFO, parse_analyze_opts),
+    SUB_CMD("test", CMD_IMAGE_TEST, parse_image_test_opts),
+    SUB_CMD("upload", CMD_IMAGE_UPLOAD, parse_image_upload_opts),
+    SUB_CMD("erase", CMD_IMAGE_ERASE, parse_common_options_no_args),
+    { 0 }
+};
+
+int parse_subcommand_options(const struct subcmd *subs, struct cli_options *copts)
+{
+    for (const struct subcmd *sc = subs; sc->name; ++sc) {
+        if (!strcmp(copts->cmd, sc->name)) {
+            copts->subcmd = sc->cmd;
+            if (sc->optparser) {
+                return sc->optparser(copts);
+            }
+            return parse_common_options(copts);
+        }
+    }
+    /* found unrecognized command */
+    copts->subcmd = CMD_NONE;
+    return UNRECOGNIZED_OPTION;
+}
+
 int parse_image_opts(struct cli_options *copts)
 {
     int ret;
@@ -292,28 +334,9 @@ int parse_image_opts(struct cli_options *copts)
     if (copts->argc > 0) {
         copts->cmd = *copts->argv;
         copts->cmdind = optind;
-        if (!strcmp("list", copts->cmd)) {
-            copts->subcmd = CMD_IMAGE_LIST;
-            return parse_common_options(copts);
-        } else if (!strcmp("analyze", copts->cmd)) {
-            copts->subcmd = CMD_IMAGE_INFO;
-            return parse_commmon_positional_args(copts, 1);
-        } else if (!strcmp("erase", copts->cmd)) {
-            copts->subcmd = CMD_IMAGE_ERASE;
-            return parse_common_options(copts);
-        } else if (!strcmp("test", copts->cmd)) {
-            copts->subcmd = CMD_IMAGE_TEST;
-            return parse_image_test_opts(copts);
-        } else if (!strcmp("confirm", copts->cmd)) {
-            copts->subcmd = CMD_IMAGE_CONFIRM;
-            return parse_common_options(copts);
-        } else if (!strcmp("upload", copts->cmd)) {
-            copts->subcmd = CMD_IMAGE_UPLOAD;
-            return parse_image_upload_opts(copts);
-        } else {
-            copts->subcmd = CMD_NONE;
-            return UNRECOGNIZED_OPTION;
-        }
+
+        return parse_subcommand_options(imgcmds, copts);
+
     } else {
         copts->subcmd = CMD_NONE;
         return MISSING_COMMAND;
@@ -322,6 +345,14 @@ int parse_image_opts(struct cli_options *copts)
     return -EINVAL;
 }
 
+
+static const struct subcmd subcmds[] = {
+    SUB_CMD("image", CMD_IMAGE, parse_image_opts),
+    SUB_CMD("echo", CMD_ECHO, parse_echo_opts),
+    SUB_CMD("reset", CMD_RESET, parse_common_options_no_args),
+    SUB_CMD("analyze", CMD_IMAGE_INFO, parse_analyze_opts),
+    { 0 }
+};
 
 /**
  * @brief parse cli options
@@ -352,10 +383,10 @@ int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
     copts->argc = argc;
     copts->argv = argv;
     opterr = 0;
-    optind = 1;
     copts->prgname = argv[0];
     copts->timeout = 3;
 
+    reset_getopt();
 
     while ((opt = getopt(argc, argv, OPTSTR "c:hs:t:vV")) != -1) {
         switch (opt) {
@@ -403,23 +434,9 @@ int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
     if (copts->argc > 0) {
         copts->cmd = *copts->argv;
         copts->cmdind = optind;
-        if (!strcmp("image", copts->cmd)) {
-            copts->subcmd = CMD_IMAGE;
-            return parse_image_opts(copts);
-        } else if (!strcmp("analyze", copts->cmd)) {
-            copts->subcmd = CMD_IMAGE_INFO;
-            return parse_commmon_positional_args(copts, 1);
-        } else if (!strcmp("echo", copts->cmd)) {
-            copts->subcmd = CMD_ECHO;
-            return parse_commmon_positional_args(copts, 1);
-        } else if (!strcmp("reset", copts->cmd)) {
-            copts->subcmd = CMD_RESET;
-            return parse_common_options(copts);
-        } else {
-            /* found unrecognized command */
-            copts->subcmd = CMD_NONE;
-            return UNRECOGNIZED_OPTION;
-        }
+
+        return parse_subcommand_options(subcmds, copts);
+
     } else {
         copts->argv = NULL;
         /* no command */

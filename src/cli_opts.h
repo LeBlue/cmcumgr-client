@@ -72,14 +72,6 @@ struct cli_options {
 int parse_cli_options(int argc, char *const *argv, struct cli_options *copts);
 
 
-int parse_reset_opts(struct cli_options *copts);
-int parse_echo_opts(struct cli_options *copts);
-int parse_image_opts(struct cli_options *copts);
-int parse_analyze_opts(struct cli_options *copts);
-
-
-
-
 int usage_common(const char *prgname);
 int usage_reset(const char *prgname);
 int usage_echo(const char *prgname);

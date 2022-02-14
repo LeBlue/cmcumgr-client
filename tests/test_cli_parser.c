@@ -534,39 +534,6 @@ void suite_cli_parse_common(void)
 }
 
 
-
-/**
- * @brief Test echo cmd arg with arg
- *
- */
-void test_cli_parse_echo_cmd_w_arg(void)
-{
-    int argc = 2;
-    const char *args[] = {
-        "echo",
-        "Hallo",
-    };
-    char **argv = build_options(argc, args);
-    struct cli_options copts = { 0 };
-    copts.argc = argc;
-    copts.argv = argv;
-    copts.subcmd = CMD_ECHO;
-
-    optind = 0;
-    int rc = parse_echo_opts(&copts);
-
-    PT_ASSERT(rc == 0);
-    PT_ASSERT(copts.help == 0);
-    PT_ASSERT(copts.cmdopts.os_echo.echo_str != NULL);
-    if (copts.cmdopts.os_echo.echo_str)
-        PT_ASSERT_STR_EQ("Hallo", copts.cmdopts.os_echo.echo_str);
-
-
-    check_shuffle(argc, argv, args);
-
-    free(argv);
-}
-
 /**
  * @brief Test echo cmd arg with arg
  *
@@ -828,7 +795,6 @@ void suite_cli_parse_echo(void)
 {
     const char *sn = "Suite CLI parsing echo";
 
-    pt_add_test(test_cli_parse_echo_cmd_w_arg, "Test parsing OS echo CLI options: echo Hallo", sn);
     pt_add_test(test_cli_parse_full_echo_cmd_w_arg, "Test parsing OS echo CLI options full: mcumgr -v echo Hallo", sn);
     pt_add_test(test_cli_parse_full_echo_cmd_w_connstring, "Test parsing OS echo CLI options full: mcumgr -c... -v echo Hallo", sn);
     pt_add_test(test_cli_parse_full_echo_cmd_help, "Test parsing OS echo common CLI options: help: mcumgr -v echo -h", sn);
