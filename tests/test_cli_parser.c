@@ -806,6 +806,186 @@ void suite_cli_parse_echo(void)
 
 }
 
+
+/**
+ * @brief Test reset cmd arg with arg
+ *
+ */
+void test_cli_parse_full_reset_cmd(void)
+{
+    int argc = 3;
+    const char *args[] = {
+        "mcumgr",
+        "-v",
+        "reset",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 1);
+    PT_ASSERT(copts.help == 0);
+    PT_ASSERT(copts.cmdind == 2);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[2]);
+    PT_ASSERT(copts.subcmd == CMD_RESET);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("reset", copts.cmd);
+
+    /* everything consumed */
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+/**
+ * @brief Test reset cmd arg with connstring
+ *
+ */
+void test_cli_parse_full_reset_cmd_w_connstring(void)
+{
+    int argc = 3;
+    const char *args[] = {
+        "mcumgr",
+        "-c=dev=/dev/ttyUSB0,baudrate=230400",
+        "reset",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 0);
+    PT_ASSERT(copts.help == 0);
+    PT_ASSERT(copts.cmdind == 2);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[2]);
+    PT_ASSERT(copts.subcmd == CMD_RESET);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("reset", copts.cmd);
+
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+    PT_ASSERT(copts.connstring != NULL);
+    check_shuffle(argc, argv, args);
+
+    if (copts.connstring) {
+        PT_ASSERT_STR_EQ("dev=/dev/ttyUSB0,baudrate=230400", copts.connstring);
+    }
+
+    free(argv);
+}
+
+/**
+ * @brief Test reset cmd arg with -h arg
+ *
+ */
+void test_cli_parse_full_reset_cmd_help(void)
+{
+    int argc = 4;
+    const char *args[] = {
+        "mcumgr",
+        "-v",
+        "reset",
+        "-h",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 1);
+    PT_ASSERT(copts.help == 1);
+    PT_ASSERT(copts.cmdind == 2);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[2]);
+    PT_ASSERT(copts.subcmd == CMD_RESET);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("reset", copts.cmd);
+
+    /* everything consumed */
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+
+/**
+ * @brief Test reset cmd arg with access arg
+ *
+ */
+void test_cli_parse_full_reset_cmd_w_access_arg(void)
+{
+    int argc = 4;
+    const char *args[] = {
+        "mcumgr",
+        "-v",
+        "reset",
+        "access"
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == -E2BIG);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 1);
+    PT_ASSERT(copts.help == 0);
+    PT_ASSERT(copts.cmdind == 2);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[2]);
+    PT_ASSERT(copts.subcmd == CMD_RESET);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("reset", copts.cmd);
+
+    /* one access arg, rest consumed */
+    PT_ASSERT(copts.argc == 1);
+    PT_ASSERT(copts.argv[0] == argv[3]);
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+
+void suite_cli_parse_reset(void)
+{
+    const char *sn = "Suite CLI parsing reset";
+
+    pt_add_test(test_cli_parse_full_reset_cmd, "Test parsing OS reset CLI options: mcumgr -v reset", sn);
+    pt_add_test(test_cli_parse_full_reset_cmd_w_connstring, "Test parsing OS reset CLI options: mcumgr -c... -v reset", sn);
+    pt_add_test(test_cli_parse_full_reset_cmd_help, "Test parsing OS reset CLI options: help: mcumgr -v reset -h", sn);
+
+
+    pt_add_test(test_cli_parse_full_reset_cmd_w_access_arg, "Test parsing OS reset CLI options: Access arg: mcumgr -v reset access", sn);
+}
+
+
 /**
  * @brief Test analyze cmd arg with filename arg
  *
@@ -869,6 +1049,7 @@ int main(int argc, char** argv)
 
     pt_add_suite(suite_cli_parse_common);
     pt_add_suite(suite_cli_parse_echo);
+    pt_add_suite(suite_cli_parse_reset);
     pt_add_suite(suite_cli_parse_analyze);
 
     return pt_run();
