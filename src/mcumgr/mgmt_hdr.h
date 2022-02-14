@@ -29,6 +29,7 @@ struct mgmt_hdr;
 #define MGMT_GROUP_ID_RUN       (7)
 #define MGMT_GROUP_ID_FS        (8)
 #define MGMT_GROUP_ID_PERUSER   (64)
+#define MGMT_GROUP_ID_ZEPHYR    (MGMT_GROUP_ID_PERUSER - 1)
 
 #define OS_MGMT_ID_ECHO            0
 #define OS_MGMT_ID_CONS_ECHO_CTRL  1
@@ -45,7 +46,7 @@ struct mgmt_hdr;
 #define IMG_MGMT_ID_ERASE        5
 #define IMG_MGMT_ID_ERASE_STATE  6
 
-
+#define ZEPHYR_MGMT_ID_ERASE_STROAGE 0
 
 #ifdef __cplusplus
 extern "C" {
