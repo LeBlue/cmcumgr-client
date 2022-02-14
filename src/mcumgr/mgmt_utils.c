@@ -71,6 +71,8 @@ int slot_flags_to_str(char *flags_buf, const struct mgmt_slot_state *slot)
 
     if (flags_off) {
         flags_buf[flags_off - 1] = '\0';
+    } else {
+        flags_buf[0] = '\0';
     }
     return 0;
 }
