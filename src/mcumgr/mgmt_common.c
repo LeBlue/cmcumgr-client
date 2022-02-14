@@ -82,7 +82,7 @@ size_t mgmt_create_generic_no_data_req(uint8_t *buf, size_t sz, uint8_t op, uint
 	struct mgmt_hdr *nh;
 
 	if (NULL == (nh = mgmt_header_init(buf, sz, op, group, id))) {
-		return -1;
+		return -ENOBUFS;
 	}
 
 	if (sz < MGMT_HEADER_LEN + 1) {
