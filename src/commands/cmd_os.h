@@ -7,7 +7,7 @@
 #define CMD_OS_H
 
 #include "mgmt.h"
-#include "mgmt_img.h"
+#include "mgmt_os.h"
 #include "smp_transport.h"
 
 #ifdef __cplusplus
