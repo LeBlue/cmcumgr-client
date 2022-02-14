@@ -61,10 +61,21 @@ int mgmt_header_is_rsp_complete(const uint8_t *buf, size_t sz);
 
 
 /**
- * @brief Check the SMP header and update @p buf and @p sz
+ * @brief Check smp header for correct command/group IDs
  *
- * @param buf        pointer to message buffer, must not be NULL.
- * @param sz         pointer to size of message buffer (valid bytes) in @p buf , must not be NULL.
+ * @param buf        pointer to message buffer, must contain the whole header.
+ * @param sz         size of message buffer (valid bytes) in @p buf
+ * @param group      expected group ID
+ * @param id         expected command id
+ * @return           0 if check passed, -EPROTO otherwise (unexpected IDs or no repsonse)
+ */
+int mgmt_header_check_rsp(const uint8_t *buf, size_t sz, uint16_t group, uint8_t id);
+
+/**
+ * @brief Check the SMP header and verify the buffer contains a whole message
+ *
+ * @param buf        pointer to message buffer
+ * @param sz         size of message buffer (valid bytes) in @p buf
  *
  * @retval 0         SMP header is valid and buffer contains the whole SMP packet.
  * @retval -EINVAL   @p buf does not point to a buffer (is NULL)
@@ -72,6 +83,12 @@ int mgmt_header_is_rsp_complete(const uint8_t *buf, size_t sz);
  */
 int mgmt_header_len_check(const uint8_t *buf, size_t sz);
 
+/**
+ * @brief Advance @p buf pointer to the first payload byte, update @p sz
+ *
+ * @param buf The buffer containing the smp packet, must contain whole header
+ * @param sz  Number of valid bytes in @p buf
+ */
 void mgmt_header_advance(const uint8_t **buf, size_t *sz);
 
 /**

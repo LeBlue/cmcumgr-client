@@ -87,16 +87,20 @@ int mgmt_header_is_rsp_to(const uint8_t *buf, size_t sz, uint16_t group, uint8_t
 	return 0;
 }
 
-/**
- * @brief Check the SMP header and update @p buf and @p sz
- *
- * @param buf        pointer to message buffer, must not be NULL.
- * @param sz         pointer to size of message buffer (valid bytes) in @p buf , must not be NULL.
- *
- * @retval 0         SMP header is valid and buffer contains the whole SMP packet.
- * @retval -EINVAL   @p buf does not point to a buffer (is NULL)
- * @retval -ENODATA  @p buf does not contain enough data for a SMP header or the SMP packet is not complete.
- */
+int mgmt_header_check_rsp(const uint8_t *buf, size_t sz, uint16_t group, uint8_t id)
+{
+	struct mgmt_hdr *nh = (struct mgmt_hdr *)buf;
+
+	if (!mgmt_header_is_rsp(buf, sz)) {
+		return -EPROTO;
+	}
+
+	if ((nh->nh_id == id) && (be16_to_host(nh->nh_group) == group)) {
+		return 0;
+	}
+	return -EPROTO;
+}
+
 int mgmt_header_len_check(const uint8_t *buf, size_t sz)
 {
 	struct mgmt_hdr *nh;
