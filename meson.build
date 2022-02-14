@@ -239,4 +239,28 @@ if get_option('enable-tests') == true
     )
     test('test-mgmt-img-upload', test_mgmt_img_upload)
 
+    mock_transport = static_library(
+        'mock_transport',
+        sources: 'tests/mock_transport.c',
+        dependencies: [ utils_dep ],
+        include_directories: ['src/transport'],
+    )
+
+    mock_transport_dep = declare_dependency(
+        link_with: [mock_transport],
+    )
+
+    test_cmd_os = executable('test-cmd-os',
+        sources: [ 'tests/test_cmd_os.c' ],
+        dependencies: [ ptest_dep, utils_dep, mcumgr_dep, mock_transport_dep ],
+    )
+    test('test-cmd-os', test_cmd_os)
+
+    test_cmd_img = executable('test-cmd-img',
+        sources: [ 'tests/test_cmd_img.c' ],
+        dependencies: [ ptest_dep, utils_dep, mcumgr_dep, mock_transport_dep ],
+    )
+    test('test-cmd-img', test_cmd_img)
+
+
 endif
