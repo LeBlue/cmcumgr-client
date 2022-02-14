@@ -23,5 +23,14 @@ do { \
 } while (0)
 
 
+#ifndef ASSERT_TEST_MSG
+#define ASSERT_TEST_MSG(_expr, fmt, args...) \
+    if (!(_expr)) { \
+        fprintf(stderr, "\nTest setup failure: "  fmt "\n", ##args); \
+    } \
+    assert(_expr)
+
+#endif
+
 #endif
 
