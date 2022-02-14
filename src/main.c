@@ -228,7 +228,7 @@ int cli_execute_image_test(struct smp_transport *transport, struct cli_options *
             print_mgmt_error(rsp.mgmt_rc);
         }
     } else {
-        fprintf(stderr, "Failed to test image %s: %s\n", copts->cmdopts.img_test.fw_sha, strerror(-rc));
+        fprintf(stderr, "Failed to test image: %s\n", strerror(-rc));
     }
     return rc;
 }
