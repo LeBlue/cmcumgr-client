@@ -463,7 +463,6 @@ int mgmt_img_decode_state_rsp(const uint8_t *buf, size_t sz, int64_t *mgmt_err, 
 					DBG("Ignore array element: %x\n", cbor_value_get_type(&arr_elem));
 					/* ignore for now */
 					cbor_value_advance(&arr_elem);
-					// return -ENOMSG;
 				}
 				DBG("Next array element: %x\n", cbor_value_get_type(&arr_elem));
 			}
