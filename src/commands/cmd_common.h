@@ -18,7 +18,27 @@ struct smp_transport;
 extern "C" {
 #endif
 
+/**
+ * @brief
+ *
+ * @param transport
+ * @param buf
+ * @param reqsz
+ * @param bufsz
+ * @return int
+ */
 int cmd_run(struct smp_transport *transport, uint8_t *buf, size_t reqsz, size_t bufsz);
+
+/**
+ * @brief
+ *
+ * @param transport
+ * @param buf
+ * @param reqsz
+ * @param bufsz
+ * @param mgmt_rc
+ * @return int
+ */
 int cmd_run_rc_rsp(struct smp_transport *transport, uint8_t *buf, size_t reqsz, size_t bufsz, struct mgmt_rc *mgmt_rc);
 
 #ifdef __cplusplus
