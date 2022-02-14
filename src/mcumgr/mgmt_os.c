@@ -23,7 +23,7 @@ ssize_t mgmt_create_os_echo_req(uint8_t *buf, size_t sz, const struct mgmt_echo_
 	int len;
 
 	if (NULL == (nh = mgmt_header_init(buf, sz, MGMT_OP_WRITE, MGMT_GROUP_ID_OS, OS_MGMT_ID_ECHO))) {
-		return -1;
+		return -ENOBUFS;
 	}
 
 	mgmt_cbor_encoder_init(&enc, buf, sz);
@@ -35,7 +35,7 @@ ssize_t mgmt_create_os_echo_req(uint8_t *buf, size_t sz, const struct mgmt_echo_
 
 	rc |= cbor_encoder_close_container(&enc, &map);
 	if (rc) {
-		return -1;
+		return -ENOBUFS;
 	}
 
 	len = mgmt_cbor_encoder_get_buffer_size(&enc, buf);

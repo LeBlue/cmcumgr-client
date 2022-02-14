@@ -73,7 +73,7 @@ ssize_t mgmt_create_image_confirm_req(uint8_t *buf, size_t sz)
 	int len;
 
 	if (NULL == (nh = mgmt_header_init(buf, sz, MGMT_OP_WRITE, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ID_STATE))) {
-		return -1;
+		return -ENOBUFS;
 	}
 
 	mgmt_cbor_encoder_init(&enc, buf, sz);
@@ -84,7 +84,7 @@ ssize_t mgmt_create_image_confirm_req(uint8_t *buf, size_t sz)
 
 	rc |= cbor_encoder_close_container(&enc, &map);
 	if (rc) {
-		return -1;
+		return -ENOBUFS;
 	}
 
 	len = mgmt_cbor_encoder_get_buffer_size(&enc, buf);
@@ -102,7 +102,7 @@ ssize_t mgmt_create_image_test_req(uint8_t *buf, size_t sz, struct mgmt_image_te
 	int len;
 
 	if (NULL == (nh = mgmt_header_init(buf, sz, MGMT_OP_WRITE, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ID_STATE))) {
-		return -1;
+		return -ENOBUFS;
 	}
 
 	mgmt_cbor_encoder_init(&enc, buf, sz);
@@ -118,7 +118,7 @@ ssize_t mgmt_create_image_test_req(uint8_t *buf, size_t sz, struct mgmt_image_te
 
 	rc |= cbor_encoder_close_container(&enc, &map);
 	if (rc) {
-		return -1;
+		return -ENOBUFS;
 	}
 
 	len = mgmt_cbor_encoder_get_buffer_size(&enc, buf);
@@ -544,7 +544,7 @@ ssize_t mgmt_create_image_upload_seg0_req(uint8_t *buf, size_t sz,
 	int len;
 
 	if (NULL == (nh = mgmt_header_init(buf, sz, MGMT_OP_WRITE, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ID_UPLOAD))) {
-		return -1;
+		return -ENOBUFS;
 	}
 
 	mgmt_cbor_encoder_init(&enc, buf, sz);
@@ -562,7 +562,7 @@ ssize_t mgmt_create_image_upload_seg0_req(uint8_t *buf, size_t sz,
 
 	rc |= cbor_encoder_close_container(&enc, &map);
 	if (rc) {
-		return -1;
+		return -ENOBUFS;
 	}
 
 	len = mgmt_cbor_encoder_get_buffer_size(&enc, buf);
@@ -581,7 +581,7 @@ ssize_t mgmt_create_image_upload_segX_req(uint8_t *buf, size_t sz,
 	int len;
 
 	if (NULL == (nh = mgmt_header_init(buf, sz, MGMT_OP_WRITE, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ID_UPLOAD))) {
-		return -1;
+		return -ENOBUFS;
 	}
 
 	mgmt_cbor_encoder_init(&enc, buf, sz);
@@ -595,7 +595,7 @@ ssize_t mgmt_create_image_upload_segX_req(uint8_t *buf, size_t sz,
 
 	rc |= cbor_encoder_close_container(&enc, &map);
 	if (rc) {
-		return -1;
+		return -ENOBUFS;
 	}
 
 	len = mgmt_cbor_encoder_get_buffer_size(&enc, buf);
