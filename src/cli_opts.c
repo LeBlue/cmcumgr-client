@@ -120,6 +120,31 @@ struct subcmd {
     { .cmd = _subcmd, .name = _name, .optparser = _parse_fn }
 
 
+struct longopt {
+    const char *name;
+    int opt;
+    int arg_num;
+};
+
+static struct longopt common_longopts[] = {
+    {.name = "help", .opt = 'h'},
+    { 0 },
+};
+
+const struct longopt *find_long_opt(const struct longopt *lopts, const char *loptstr)
+{
+    if (!loptstr) {
+        return NULL;
+    }
+    for (const struct longopt *lo = lopts; lo->name; ++lo ) {
+        size_t len = strlen(lo->name);
+        if (!strncmp(loptstr, lo->name, len) &&
+            (loptstr[len] == '\0' || loptstr[len] == '=')) {
+            return lo;
+        }
+    }
+    return NULL;
+}
 
 /**
  * @brief Check for common options
@@ -182,7 +207,19 @@ static int parse_common_options(struct cli_options *copts)
     }
 
     while ((opt = getopt(argc, argv, OPTSTR COMMON_OPTS)) != -1) {
-        int ret = assign_common_opts(copts, opt);
+        int ret;
+
+        // if (opt == '-') {
+        //     ret = find_long_opt(common_longopts, argv[optind]);
+        //     if (ret < 0) {
+        //         copts->argc = argc - optind;
+        //         copts->argv += optind;
+        //         return ret;
+        //     }
+        //     opt = ret;
+        // }
+
+        ret = assign_common_opts(copts, opt);
         if (ret) {
             return ret;
         }
@@ -354,6 +391,17 @@ static const struct subcmd subcmds[] = {
     { 0 }
 };
 
+
+static struct longopt cli_longopts[] = {
+    { .name = "help", .opt = 'h'},
+    { .name = "version", .opt = 'V'},
+    { .name = "verbose", .opt = 'v'},
+    { .name = "conntype", .opt = 't', .arg_num = 1},
+    { .name = "connstring", .opt = 's', .arg_num = 1},
+    { 0 },
+};
+
+
 /**
  * @brief parse cli options
  *
@@ -388,19 +436,45 @@ int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
 
     reset_getopt();
 
-    while ((opt = getopt(argc, argv, OPTSTR "c:hs:t:vV")) != -1) {
+    while ((opt = getopt(argc, argv, OPTSTR "c:hs:t:vV-:")) != -1) {
+        const char *arg = optarg;
+        if (opt == '-') {
+            const struct longopt *lo = find_long_opt(cli_longopts, arg);
+
+            if (!lo) {
+                copts->argc = argc - optind;
+                copts->argv += optind;
+                return UNRECOGNIZED_OPTION;
+            }
+            opt = lo->opt;
+            if (lo->arg_num) {
+                size_t flag_len = strlen(lo->name);
+                char next = arg[flag_len];
+                if (next == '\0' && optind < argc) {
+                    arg = argv[optind];
+                    optind++;
+                } else if (next == '=') {
+                    arg = arg + flag_len;
+                } else {
+                    copts->argc = argc - optind;
+                    copts->argv += optind;
+                    return MISSING_ARGUMENT;
+                }
+            }
+        }
+
         switch (opt) {
             case 'c':
-                copts->connstring = get_optarg(optarg);
+                copts->connstring = get_optarg(arg);
                 break;
             case 'h':
                 copts->help = 1;
                 break;
             case 's':
-                copts->connstring = get_optarg(optarg);
+                copts->connstring = get_optarg(arg);
                 break;
             case 't':
-                copts->conntype = get_optarg(optarg);
+                copts->conntype = get_optarg(arg);
                 break;
             case 'v':
                 ++copts->verbose;
@@ -408,9 +482,6 @@ int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
             case 'V':
                 copts->version = 1;
                 break;
-            // case '-':
-            //     parse_long_opt(argc, argv, copts);
-            //     break;
             case '?':
                 /* unrecognized option */
                 copts->optopt = optopt;

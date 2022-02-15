@@ -81,6 +81,34 @@ void test_cli_parse_common_help(void)
 }
 
 /**
+ * @brief Test long --help option
+ *
+ */
+void test_cli_parse_common_help_long(void)
+{
+    int argc = 2;
+    const char *args[] = {
+        "mcumgr",
+        "--help",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts;
+    optind = 0;
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 0);
+    PT_ASSERT(copts.help == 1);
+    PT_ASSERT(copts.cmd == NULL);
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+/**
  * @brief Test unknown option
  *
  */
@@ -509,6 +537,7 @@ void suite_cli_parse_common(void)
     const char *sn =  "Suite CLI parsing";
 
     pt_add_test(test_cli_parse_common_help, "Test parsing common CLI options: -h", sn);
+    pt_add_test(test_cli_parse_common_help_long, "Test parsing common CLI options: --help", sn);
     pt_add_test(test_cli_parse_common_unknown, "Test parsing common CLI options: -k unknown", sn);
     pt_add_test(test_cli_parse_common_verbose_1, "Test parsing common CLI options: -v", sn);
     pt_add_test(test_cli_parse_common_verbose_2, "Test parsing common CLI options: -v -v", sn);
