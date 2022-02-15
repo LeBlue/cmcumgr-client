@@ -49,7 +49,7 @@ static const uint8_t slot_state[] =
                                     "gpending" "\xf4";
 
 
-void test_cmd_img_list(void)
+static void test_cmd_img_list(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -64,7 +64,7 @@ void test_cmd_img_list(void)
 }
 
 
-void test_cmd_img_list_not_supported(void)
+static void test_cmd_img_list_not_supported(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -80,7 +80,7 @@ void test_cmd_img_list_not_supported(void)
     PT_ASSERT(rsp.mgmt_rc == MGMT_ERR_ENOTSUP);
 }
 
-void test_cmd_img_list_timeout(void)
+static void test_cmd_img_list_timeout(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -93,7 +93,7 @@ void test_cmd_img_list_timeout(void)
     PT_ASSERT(rc == -ETIMEDOUT);
 }
 
-void test_cmd_img_list_wrong_group_id(void)
+static void test_cmd_img_list_wrong_group_id(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -109,7 +109,7 @@ void test_cmd_img_list_wrong_group_id(void)
 }
 
 
-void test_cmd_img_list_wrong_cmd_id(void)
+static void test_cmd_img_list_wrong_cmd_id(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -124,7 +124,7 @@ void test_cmd_img_list_wrong_cmd_id(void)
     PT_ASSERT(rc == -EPROTO);
 }
 
-void suite_cmd_img_state(void)
+static void suite_cmd_img_state(void)
 {
     const char *sn =  "Suite CMD execution";
 
@@ -135,7 +135,7 @@ void suite_cmd_img_state(void)
     pt_add_test(test_cmd_img_list_wrong_cmd_id, "Test Command IMG List: wrong cmd id rsp", sn);
 }
 
-void test_cmd_img_test(void)
+static void test_cmd_img_test(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -151,7 +151,7 @@ void test_cmd_img_test(void)
 }
 
 
-void test_cmd_img_test_not_supported(void)
+static void test_cmd_img_test_not_supported(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -168,7 +168,7 @@ void test_cmd_img_test_not_supported(void)
     PT_ASSERT(rsp.mgmt_rc == MGMT_ERR_ENOTSUP);
 }
 
-void test_cmd_img_test_timeout(void)
+static void test_cmd_img_test_timeout(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -182,7 +182,7 @@ void test_cmd_img_test_timeout(void)
     PT_ASSERT(rc == -ETIMEDOUT);
 }
 
-void test_cmd_img_test_wrong_group_id(void)
+static void test_cmd_img_test_wrong_group_id(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -199,7 +199,7 @@ void test_cmd_img_test_wrong_group_id(void)
 }
 
 
-void test_cmd_img_test_wrong_cmd_id(void)
+static void test_cmd_img_test_wrong_cmd_id(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -216,7 +216,7 @@ void test_cmd_img_test_wrong_cmd_id(void)
 }
 
 
-void suite_cmd_img_test(void)
+static void suite_cmd_img_test(void)
 {
     const char *sn =  "Suite CMD execution";
 
@@ -228,7 +228,7 @@ void suite_cmd_img_test(void)
 }
 
 
-void test_cmd_img_confirm(void)
+static void test_cmd_img_confirm(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -243,7 +243,7 @@ void test_cmd_img_confirm(void)
 }
 
 
-void test_cmd_img_confirm_not_supported(void)
+static void test_cmd_img_confirm_not_supported(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -259,7 +259,7 @@ void test_cmd_img_confirm_not_supported(void)
     PT_ASSERT(rsp.mgmt_rc == MGMT_ERR_ENOTSUP);
 }
 
-void test_cmd_img_confirm_timeout(void)
+static void test_cmd_img_confirm_timeout(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -272,7 +272,7 @@ void test_cmd_img_confirm_timeout(void)
     PT_ASSERT(rc == -ETIMEDOUT);
 }
 
-void test_cmd_img_confirm_wrong_group_id(void)
+static void test_cmd_img_confirm_wrong_group_id(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -288,7 +288,7 @@ void test_cmd_img_confirm_wrong_group_id(void)
 }
 
 
-void test_cmd_img_confirm_wrong_cmd_id(void)
+static void test_cmd_img_confirm_wrong_cmd_id(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -303,7 +303,7 @@ void test_cmd_img_confirm_wrong_cmd_id(void)
     PT_ASSERT(rc == -EPROTO);
 }
 
-void suite_cmd_img_confirm(void)
+static void suite_cmd_img_confirm(void)
 {
     const char *sn =  "Suite CMD execution";
 

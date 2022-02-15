@@ -179,6 +179,7 @@ if get_option('enable-tests') == true
         sources: [ 'tests/test_file_reader.c', 'src/file_reader_unix.c' ],
         include_directories : 'src',
         dependencies: [ ptest_dep, utils_dep ],
+        c_args: common_cc_flags,
     )
     configure_file(copy: true, input: 'tests/file_reader_in.txt', output: 'file_reader_in.txt')
     test('test-file-reader-unix', test_file_reader_unix)
@@ -187,6 +188,7 @@ if get_option('enable-tests') == true
         sources: [ 'tests/test_mcuboot_img_internal.c', 'src/file_reader_unix.c'],
         include_directories : [ 'src', 'src/include' ],
         dependencies: [ ptest_dep, utils_dep ],
+        c_args: common_cc_flags,
     )
     test('test-mcuboot-image-parser-internal', test_mcuboot_img_parser_int)
 
@@ -194,6 +196,7 @@ if get_option('enable-tests') == true
         sources: [ 'tests/test_mcuboot_img.c', 'src/file_reader_unix.c', 'src/mcuboot_img.c'],
         include_directories : [ 'src', 'src/include' ],
         dependencies: [ ptest_dep, utils_dep ],
+        c_args: common_cc_flags,
     )
     configure_file(copy: true, input: 'tests/mcuboot_image.bin', output: 'mcuboot_image.bin')
     configure_file(copy: true, input: 'tests/mcuboot_image_trunc_1.bin', output: 'mcuboot_image_trunc_1.bin')
@@ -202,6 +205,7 @@ if get_option('enable-tests') == true
     test_cbor = executable('test-cbor',
         sources: [ 'tests/test_cbor.c' ],
         dependencies: [ ptest_dep, utils_dep, mcumgr_dep ],
+        c_args: common_cc_flags,
     )
     test('test-cbor', test_cbor)
 
@@ -209,6 +213,7 @@ if get_option('enable-tests') == true
         sources: [ 'tests/test_cli_parser.c', 'src/cli_opts.c', 'src/mcumgr/mgmt_utils.c' ],
         include_directories : ['src', 'src/mcumgr', 'src/include'],
         dependencies: [ ptest_dep, utils_dep ],
+        c_args: common_cc_flags,
     )
     test('test-cli-parser', test_cli_parser)
 
@@ -216,6 +221,7 @@ if get_option('enable-tests') == true
         sources: [ 'tests/test_serial_transport.c', 'src/mcumgr/mgmt_hdr.c', 'src/transport/serial/smp_serial.c' ],
         include_directories : [ 'src', 'src/mcumgr', 'src/transport', 'src/transport/serial' ],
         dependencies: [ ptest_dep, utils_dep ],
+        c_args: common_cc_flags,
     )
     test('test-serial-transport', test_serial_transport)
 
@@ -223,6 +229,7 @@ if get_option('enable-tests') == true
         sources: [ 'tests/test_cli_parser_serial.c', 'src/transport/serial/serial_opts.c' ],
         include_directories : ['src', 'src/transport',],
         dependencies: [ ptest_dep, utils_dep ],
+        c_args: common_cc_flags,
     )
     test('test-cli-parser-serial', test_cli_parser_serial)
 
@@ -230,12 +237,14 @@ if get_option('enable-tests') == true
         sources: [ 'tests/test_mgmt_utils.c', 'src/mcumgr/mgmt_utils.c', 'src/lib/hexlify.c' ],
         include_directories : [ 'src', 'src/include', 'src/mcumgr', 'src/transport/serial', 'src/lib/include' ],
         dependencies: [ ptest_dep, utils_dep ],
+        c_args: common_cc_flags,
     )
     test('test-mgmt-utils', test_mgmt_utils)
 
     test_mgmt_img_upload = executable('test-mgmt-img-upload',
         sources: [ 'tests/test_mgmt_img_upload.c' ],
         dependencies: [ ptest_dep, utils_dep, mcumgr_dep ],
+        c_args: common_cc_flags,
     )
     test('test-mgmt-img-upload', test_mgmt_img_upload)
 
@@ -244,6 +253,7 @@ if get_option('enable-tests') == true
         sources: 'tests/mock_transport.c',
         dependencies: [ utils_dep ],
         include_directories: ['src/transport'],
+        c_args: common_cc_flags,
     )
 
     mock_transport_dep = declare_dependency(
@@ -253,12 +263,14 @@ if get_option('enable-tests') == true
     test_cmd_os = executable('test-cmd-os',
         sources: [ 'tests/test_cmd_os.c' ],
         dependencies: [ ptest_dep, utils_dep, mcumgr_dep, mock_transport_dep ],
+        c_args: common_cc_flags,
     )
     test('test-cmd-os', test_cmd_os)
 
     test_cmd_img = executable('test-cmd-img',
         sources: [ 'tests/test_cmd_img.c' ],
         dependencies: [ ptest_dep, utils_dep, mcumgr_dep, mock_transport_dep ],
+        c_args: common_cc_flags,
     )
     test('test-cmd-img', test_cmd_img)
 

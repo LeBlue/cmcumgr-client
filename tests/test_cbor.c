@@ -26,7 +26,7 @@
 #define CBOR_BUF_SZ 512
 
 
-void test_mgmt_is_rsp_read(void)
+static void test_mgmt_is_rsp_read(void)
 {
     const uint8_t msg[8] = "\x01\x00\x00\x00\x00\x00\x00\x00";
 
@@ -36,7 +36,7 @@ void test_mgmt_is_rsp_read(void)
 }
 
 
-void test_mgmt_is_rsp_write(void)
+static void test_mgmt_is_rsp_write(void)
 {
     const uint8_t msg[8] = "\x03\x00\x00\x00\x00\x00\x00\x00";
 
@@ -46,7 +46,7 @@ void test_mgmt_is_rsp_write(void)
 }
 
 
-void test_mgmt_is_rsp_invalid(void)
+static void test_mgmt_is_rsp_invalid(void)
 {
     const uint8_t msg[8] = "\x00\x00\x00\x00\x00\x00\x00\x00";
 
@@ -56,7 +56,7 @@ void test_mgmt_is_rsp_invalid(void)
 }
 
 
-void test_mgmt_header_is_rsp_complete(void)
+static void test_mgmt_header_is_rsp_complete(void)
 {
     const uint8_t msg[8] = "\x02\x00\x00\x00\x00\x00\x00\x00";
 
@@ -66,7 +66,7 @@ void test_mgmt_header_is_rsp_complete(void)
 }
 
 
-void test_mgmt_header_is_rsp_complete_fail_hdr(void)
+static void test_mgmt_header_is_rsp_complete_fail_hdr(void)
 {
     /* buffer to short for header */
     const uint8_t msg[7] = "\x02\x00\x00\x00\x00\x00\x00";
@@ -77,7 +77,7 @@ void test_mgmt_header_is_rsp_complete_fail_hdr(void)
 }
 
 
-void test_mgmt_header_is_rsp_complete_fail_data(void)
+static void test_mgmt_header_is_rsp_complete_fail_data(void)
 {
     /* buffer/data shorter than length in header */
     const uint8_t msg[10] = "\x02\x00\x00\x04\x00\x00\x00\x00" "12";
@@ -90,15 +90,17 @@ void test_mgmt_header_is_rsp_complete_fail_data(void)
 
 void suite_mgmt_rsp_basic_smp(void)
 {
-   pt_add_test(test_mgmt_is_rsp_read, "Test check is valid read response header", "Suite Cbor parse SMP");
-   pt_add_test(test_mgmt_is_rsp_write, "Test check is valid write response header write", "Suite Cbor parse SMP");
-   pt_add_test(test_mgmt_is_rsp_invalid, "Test check fail request header", "Suite Cbor parse SMP");
-   pt_add_test(test_mgmt_header_is_rsp_complete_fail_hdr, "Test check fail incomplete header", "Suite Cbor parse SMP");
-   pt_add_test(test_mgmt_header_is_rsp_complete_fail_data, "Test check fail incomplete data", "Suite Cbor parse SMP");
+    const char *sn = "Suite Cbor parse SMP";
+    pt_add_test(test_mgmt_is_rsp_read, "Test check is valid read response header", sn);
+    pt_add_test(test_mgmt_is_rsp_write, "Test check is valid write response header write", sn);
+    pt_add_test(test_mgmt_is_rsp_invalid, "Test check fail request header", sn);
+    pt_add_test(test_mgmt_header_is_rsp_complete, "Test check fail request header, incomplete", sn);
+    pt_add_test(test_mgmt_header_is_rsp_complete_fail_hdr, "Test check fail incomplete header", sn);
+    pt_add_test(test_mgmt_header_is_rsp_complete_fail_data, "Test check fail incomplete data", sn);
 }
 
 
-void test_mgmt_rsp_get_rc_too_short_buf(void)
+static void test_mgmt_rsp_get_rc_too_short_buf(void)
 {
     /* message with {"rc": 0} */
     const uint8_t msg[7] = "\x02\x00\x00\x06\x00\x00\x00";
@@ -110,7 +112,7 @@ void test_mgmt_rsp_get_rc_too_short_buf(void)
 }
 
 
-void test_mgmt_rsp_get_rc_ok(void)
+static void test_mgmt_rsp_get_rc_ok(void)
 {
     /* message with {"rc": 0} */
     const uint8_t msg[14] = "\x02\x00\x00\x06\x00\x00\x00\x00" "\xbf" "brc" "\x00\xff";
@@ -122,7 +124,7 @@ void test_mgmt_rsp_get_rc_ok(void)
     PT_ASSERT(mgmt_err == 0);
 }
 
-void test_mgmt_rsp_get_rc_ok_alt_enc(void) {
+static void test_mgmt_rsp_get_rc_ok_alt_enc(void) {
     /* message with {"rc": 0}, alternate map encoding */
     const uint8_t msg[13] = "\x02\x00\x00\x05\x00\x00\x00\x00" "\xa1" "brc" "\x00";
     int64_t mgmt_err;
@@ -134,7 +136,7 @@ void test_mgmt_rsp_get_rc_ok_alt_enc(void) {
 }
 
 
-void test_mgmt_rsp_get_rc_err(void)
+static void test_mgmt_rsp_get_rc_err(void)
 {
     /* message with {"rc": 0} */
     const uint8_t msg[14] = "\x02\x00\x00\x06\x00\x00\x00\x00" "\xbf" "brc" "\x06\xff";
@@ -147,7 +149,7 @@ void test_mgmt_rsp_get_rc_err(void)
 }
 
 
-void test_mgmt_rsp_get_rc_err_alt_enc(void)
+static void test_mgmt_rsp_get_rc_err_alt_enc(void)
 {
     /* message with {"rc": 0}, alternate map encoding */
     const uint8_t msg[13] = "\x02\x00\x00\x05\x00\x00\x00\x00" "\xa1" "brc" "\x06";
@@ -160,7 +162,7 @@ void test_mgmt_rsp_get_rc_err_alt_enc(void)
 }
 
 
-void test_mgmt_rsp_get_rc_not_present_single_key(void)
+static void test_mgmt_rsp_get_rc_not_present_single_key(void)
 {
     /* message with {"off": 0} */
     const uint8_t msg[14] = "\x02\x00\x00\x05\x00\x00\x00\x00" "\xa1" "coff" "\x00";
@@ -173,7 +175,7 @@ void test_mgmt_rsp_get_rc_not_present_single_key(void)
 }
 
 
-void test_mgmt_rsp_get_rc_not_present_2_keys(void)
+static void test_mgmt_rsp_get_rc_not_present_2_keys(void)
 {
     /* message with {"off": 0, "sha": b'\x00\x01' } */
     const uint8_t msg[21] = "\x02\x00\x00\x05\x00\x00\x00\x00" "\xa2" "coff" "\x00" "cshaB" "\x00\x01";
@@ -186,7 +188,7 @@ void test_mgmt_rsp_get_rc_not_present_2_keys(void)
 }
 
 
-void test_mgmt_rsp_get_rc_not_present_2_keys_alt_enc(void)
+static void test_mgmt_rsp_get_rc_not_present_2_keys_alt_enc(void)
 {
     /* message with {"off": 0, "sha": b'\x00\x01' }, alternate encoding */
     const uint8_t msg[22] = "\x02\x00\x00\x05\x00\x00\x00\x00" "\xbf" "coff" "\x00" "cshaB" "\x00\x01\xff";
@@ -199,7 +201,7 @@ void test_mgmt_rsp_get_rc_not_present_2_keys_alt_enc(void)
 }
 
 
-void test_mgmt_rsp_get_rc_invalid_map(void)
+static void test_mgmt_rsp_get_rc_invalid_map(void)
 {
     /* invalid cbor data (no map) */
     const uint8_t msg[14] = "\x02\x00\x00\x05\x00\x00\x00\x00" "\x80" "brc" "\x00";
@@ -212,7 +214,7 @@ void test_mgmt_rsp_get_rc_invalid_map(void)
 }
 
 
-void test_mgmt_rsp_get_rc_invalid_mapkey(void)
+static void test_mgmt_rsp_get_rc_invalid_mapkey(void)
 {
     /* invalid cbor data { "of": '\x00'} */
     const uint8_t msg[14] = "\x02\x00\x00\x05\x00\x00\x00\x00" "\xa1" "boff" "\x00";
@@ -225,7 +227,7 @@ void test_mgmt_rsp_get_rc_invalid_mapkey(void)
 }
 
 
-void test_mgmt_rsp_get_rc_invalid_mapkey_2(void)
+static void test_mgmt_rsp_get_rc_invalid_mapkey_2(void)
 {
     /* invalid cbor data { "of": '\x00'} */
     const uint8_t msg[14] = "\x02\x00\x00\x05\x00\x00\x00\x00" "\xa1" "Boff" "\x00";
@@ -241,6 +243,8 @@ void test_mgmt_rsp_get_rc_invalid_mapkey_2(void)
 void suite_mgmt_rsp_common_rc(void)
 {
     const char *sn = "Suite Cbor parse mgmt err";
+
+    pt_add_test(test_mgmt_rsp_get_rc_too_short_buf, "Test parse mgmt error code, short buffer", sn);
 
     pt_add_test(test_mgmt_rsp_get_rc_ok, "Test parse mgmt error code OK", sn);
     pt_add_test(test_mgmt_rsp_get_rc_ok_alt_enc, "Test parse mgmt error code OK, alt. encoding", sn);
@@ -261,7 +265,7 @@ void suite_mgmt_rsp_common_rc(void)
  * @brief Test OS echo packet is encoded correctly
  *
  */
-void test_encode_mgmt_os_echo(void)
+static void test_encode_mgmt_os_echo(void)
 {
     size_t cnt;
     uint8_t buf[CBOR_BUF_SZ + 1];
@@ -285,7 +289,7 @@ void test_encode_mgmt_os_echo(void)
  * @brief Test OS reset packet is encoded correctly
  *
  */
-void test_encode_mgmt_os_reset(void)
+static void test_encode_mgmt_os_reset(void)
 {
     size_t cnt;
     uint8_t buf[CBOR_BUF_SZ + 1];
@@ -308,7 +312,7 @@ void suite_mgmt_os_encode(void) {
 }
 
 
-void test_mgmt_os_echo_rsp_valid(void)
+static void test_mgmt_os_echo_rsp_valid(void)
 {
     /* cbor data { "r": "Hallo" } */
     const uint8_t msg[18] = "\x03\x00\x00\x0a\x00\x00\x00\x00" "\xbf" "areHallo" "\xff";
@@ -322,7 +326,7 @@ void test_mgmt_os_echo_rsp_valid(void)
 }
 
 
-void test_mgmt_os_echo_rsp_valid_maxlen(void)
+static void test_mgmt_os_echo_rsp_valid_maxlen(void)
 {
     /* zephyr limits resonses to 128 bytes echo string */
     /* cbor data { "r": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" "abcd" } */
@@ -343,7 +347,7 @@ void test_mgmt_os_echo_rsp_valid_maxlen(void)
 }
 
 
-void test_mgmt_os_echo_rsp_valid_alt_enc(void)
+static void test_mgmt_os_echo_rsp_valid_alt_enc(void)
 {
     /* cbor data { "r": "Hallo" } */
     const uint8_t msg[17] = "\x03\x00\x00\x09\x00\x00\x00\x00" "\xa1" "areHallo";
@@ -357,7 +361,7 @@ void test_mgmt_os_echo_rsp_valid_alt_enc(void)
 }
 
 
-void test_mgmt_os_echo_rsp_empty_str(void)
+static void test_mgmt_os_echo_rsp_empty_str(void)
 {
     /* cbor data { "r": "" } */
     const uint8_t msg[13] = "\x03\x00\x00\x05\x00\x00\x00\x00" "\xbf" "ar`" "\xff";
@@ -371,7 +375,7 @@ void test_mgmt_os_echo_rsp_empty_str(void)
 }
 
 
-void test_mgmt_os_echo_rsp_missing_key(void)
+static void test_mgmt_os_echo_rsp_missing_key(void)
 {
     /* cbor data { "d": "" } */
     const uint8_t msg[13] = "\x03\x00\x00\x05\x00\x00\x00\x00" "\xbf" "ad`" "\xff";
@@ -384,7 +388,7 @@ void test_mgmt_os_echo_rsp_missing_key(void)
 }
 
 
-void test_mgmt_os_echo_rsp_wrong_value_type(void)
+static void test_mgmt_os_echo_rsp_wrong_value_type(void)
 {
     /* cbor data { "r": 33 } */
     const uint8_t msg[14] = "\x03\x00\x00\x05\x00\x00\x00\x00" "\xbf" "ar" "\x18" "!" "\xff";
@@ -397,7 +401,7 @@ void test_mgmt_os_echo_rsp_wrong_value_type(void)
 }
 
 
-void test_mgmt_os_echo_rsp_no_map(void)
+static void test_mgmt_os_echo_rsp_no_map(void)
 {
     /* cbor data [] */
     const uint8_t msg[9] = "\x03\x00\x00\x01\x00\x00\x00\x00" "\x80";
@@ -410,7 +414,7 @@ void test_mgmt_os_echo_rsp_no_map(void)
 }
 
 
-void test_mgmt_os_echo_rsp_msg_truncated(void)
+static void test_mgmt_os_echo_rsp_msg_truncated(void)
 {
     /* cbor data {"r" | (truncated) */
     const uint8_t msg[11] = "\x03\x00\x00\x05\x00\x00\x00\x00" "\xbf" "ar";
@@ -446,7 +450,7 @@ void suite_mgmt_os_parse_rsp(void)
  * @brief Test image erase packet is encoded correctly
  *
  */
-void test_encode_mgmt_img_erase(void)
+static void test_encode_mgmt_img_erase(void)
 {
     size_t cnt;
     uint8_t buf[CBOR_BUF_SZ + 1];
@@ -465,7 +469,7 @@ void test_encode_mgmt_img_erase(void)
 
 static const uint8_t hash[32] = "0123456789ABCDEF" "0123456789ABCDEF";
 
-void test_encode_mgmt_img_state_get_list(void)
+static void test_encode_mgmt_img_state_get_list(void)
 {
     size_t cnt;
     uint8_t buf[CBOR_BUF_SZ + 1];
@@ -482,7 +486,7 @@ void test_encode_mgmt_img_state_get_list(void)
     PT_ASSERT(buf[CBOR_BUF_SZ] == 0);
 }
 
-void test_encode_mgmt_img_state_set_test(void)
+static void test_encode_mgmt_img_state_set_test(void)
 {
     size_t cnt;
     uint8_t buf[CBOR_BUF_SZ + 1];
@@ -506,7 +510,7 @@ void test_encode_mgmt_img_state_set_test(void)
     PT_ASSERT(buf[CBOR_BUF_SZ] == 0);
 }
 
-void test_encode_mgmt_img_state_set_test_confirm(void)
+static void test_encode_mgmt_img_state_set_test_confirm(void)
 {
     size_t cnt;
     uint8_t buf[CBOR_BUF_SZ + 1];
@@ -532,7 +536,7 @@ void test_encode_mgmt_img_state_set_test_confirm(void)
     PT_ASSERT(buf[CBOR_BUF_SZ] == 0);
 }
 
-void test_encode_mgmt_img_state_set_confirm(void)
+static void test_encode_mgmt_img_state_set_confirm(void)
 {
     size_t cnt;
     uint8_t buf[CBOR_BUF_SZ + 1];
@@ -565,7 +569,7 @@ void suite_mgmt_img_encode(void)
 }
 
 
-void test_mgmt_parse_version_str(void)
+static void test_mgmt_parse_version_str(void)
 {
     const char vbuf[] = "1.2.3";
 
@@ -579,7 +583,7 @@ void test_mgmt_parse_version_str(void)
     PT_ASSERT(version.build_num == 0);
 }
 
-void test_mgmt_parse_version_str_zero(void)
+static void test_mgmt_parse_version_str_zero(void)
 {
     const char vbuf[] = "1.0.3";
 
@@ -593,7 +597,7 @@ void test_mgmt_parse_version_str_zero(void)
     PT_ASSERT(version.build_num == 0);
 }
 
-void test_mgmt_parse_version_str_multiple_digits(void)
+static void test_mgmt_parse_version_str_multiple_digits(void)
 {
     const char vbuf[] = "10.11.13";
 
@@ -608,7 +612,7 @@ void test_mgmt_parse_version_str_multiple_digits(void)
 }
 
 
-void test_mgmt_parse_version_str_build_num(void)
+static void test_mgmt_parse_version_str_build_num(void)
 {
     const char vbuf[] = "1.0.0+1400";
 
@@ -623,7 +627,7 @@ void test_mgmt_parse_version_str_build_num(void)
 }
 
 
-void test_mgmt_parse_version_str_max(void)
+static void test_mgmt_parse_version_str_max(void)
 {
     const char vbuf[] = "255.255.65535+4294967295";
 
@@ -638,7 +642,7 @@ void test_mgmt_parse_version_str_max(void)
 }
 
 
-void test_mgmt_parse_version_str_fail_fmt_maj(void)
+static void test_mgmt_parse_version_str_fail_fmt_maj(void)
 {
     const char vbuf[] = "256.0.1";
     struct image_version version;
@@ -646,7 +650,7 @@ void test_mgmt_parse_version_str_fail_fmt_maj(void)
     PT_ASSERT(ret == -EINVAL);
 }
 
-void test_mgmt_parse_version_str_fail_fmt_min(void)
+static void test_mgmt_parse_version_str_fail_fmt_min(void)
 {
     const char vbuf[] = "0.256.1";
     struct image_version version;
@@ -655,7 +659,7 @@ void test_mgmt_parse_version_str_fail_fmt_min(void)
 }
 
 
-void test_mgmt_parse_version_str_fail_fmt_rev(void)
+static void test_mgmt_parse_version_str_fail_fmt_rev(void)
 {
     const char vbuf[] = "0.1.65536";
     struct image_version version;
@@ -663,7 +667,7 @@ void test_mgmt_parse_version_str_fail_fmt_rev(void)
     PT_ASSERT(ret == -EINVAL);
 }
 
-void test_mgmt_parse_version_str_fail_fmt_build_num(void)
+static void test_mgmt_parse_version_str_fail_fmt_build_num(void)
 {
     const char vbuf[] = "0.1.1+4294967296";
     struct image_version version;
@@ -672,7 +676,7 @@ void test_mgmt_parse_version_str_fail_fmt_build_num(void)
 }
 
 
-void test_mgmt_parse_version_str_fail_fmt_early_plus(void)
+static void test_mgmt_parse_version_str_fail_fmt_early_plus(void)
 {
     const char vbuf[] = "255+1";
     struct image_version version;
@@ -681,7 +685,7 @@ void test_mgmt_parse_version_str_fail_fmt_early_plus(void)
 }
 
 
-void test_mgmt_parse_version_str_fail_fmt_all_dot(void)
+static void test_mgmt_parse_version_str_fail_fmt_all_dot(void)
 {
     const char vbuf[] = "0.1.1.1";
     struct image_version version;
@@ -690,7 +694,7 @@ void test_mgmt_parse_version_str_fail_fmt_all_dot(void)
 }
 
 
-// void test_mgmt_parse_version_str_fail_fmt_leading_zero(void)
+// static void test_mgmt_parse_version_str_fail_fmt_leading_zero(void)
 // {
 //     const char vbuf[] = "0.1.01";
 //     struct image_version version;
@@ -745,7 +749,7 @@ static const uint8_t slot_state[] =
                                     "factive" "\xf4"
                                     "gpending" "\xf4";
 
-void test_mgmt_img_state_parse(void)
+static void test_mgmt_img_state_parse(void)
 {
     /* cbor data
      { "images": [

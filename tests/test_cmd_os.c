@@ -25,7 +25,7 @@
 #include "cmd_img.h"
 #include "mcumgr.h"
 
-void test_cmd_os_reset(void)
+static void test_cmd_os_reset(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -40,7 +40,7 @@ void test_cmd_os_reset(void)
     PT_ASSERT(rsp.mgmt_rc == 0);
 }
 
-void test_cmd_os_reset_not_supported(void)
+static void test_cmd_os_reset_not_supported(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -55,7 +55,7 @@ void test_cmd_os_reset_not_supported(void)
     PT_ASSERT(rsp.mgmt_rc == MGMT_ERR_ENOTSUP);
 }
 
-void test_cmd_os_reset_timeout(void)
+static void test_cmd_os_reset_timeout(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -67,7 +67,7 @@ void test_cmd_os_reset_timeout(void)
     PT_ASSERT(rc == -ETIMEDOUT);
 }
 
-void test_cmd_os_reset_trunc_rsp(void)
+static void test_cmd_os_reset_trunc_rsp(void)
 {
     int rc;
     struct smp_transport *t = setup_smp_mock();
@@ -83,7 +83,7 @@ void test_cmd_os_reset_trunc_rsp(void)
 }
 
 
-void suite_cmd_os_reset(void)
+static void suite_cmd_os_reset(void)
 {
     const char *sn =  "Suite Command OS execution";
 

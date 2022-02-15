@@ -179,7 +179,7 @@ void init_serial_transport(void)
 }
 
 
-void test_smp_serial_write_hello(void)
+static void test_smp_serial_write_hello(void)
 {
     const uint8_t tx_data_const[5] = "Hello";
     size_t tx_len = sizeof(tx_data_const);
@@ -197,7 +197,7 @@ void test_smp_serial_write_hello(void)
 }
 
 
-void test_smp_serial_write_mgmt_rc(void)
+static void test_smp_serial_write_mgmt_rc(void)
 {
     const uint8_t tx_data_const[14] = "\x02\x00\x00\x06\x00\x00\x00\x00" "\xbf" "brc" "\x00\xff";
     size_t tx_len = sizeof(tx_data_const);
@@ -217,7 +217,7 @@ void test_smp_serial_write_mgmt_rc(void)
 }
 
 
-void test_smp_serial_read(void)
+static void test_smp_serial_read(void)
 {
     const uint8_t rx_enc_data[27] = "\x06\x09"
                                     "ABACAAAGAAAAAL"
@@ -239,7 +239,7 @@ void test_smp_serial_read(void)
 }
 
 
-void test_smp_serial_read_wrong_pktlen(void)
+static void test_smp_serial_read_wrong_pktlen(void)
 {
     const uint8_t rx_enc_data[27] = "\x06\x09"
                                     "AA4CAAAGAAAAAL"
@@ -261,7 +261,7 @@ void test_smp_serial_read_wrong_pktlen(void)
 }
 
 
-void test_smp_serial_read_timeout(void)
+static void test_smp_serial_read_timeout(void)
 {
     const uint8_t rx_enc_data[23] = "\x06\x09"
                                     "ABACAAAGAAAAAL"
@@ -279,7 +279,7 @@ void test_smp_serial_read_timeout(void)
 }
 
 
-void test_smp_serial_read_garbage_before(void)
+static void test_smp_serial_read_garbage_before(void)
 {
     /* make transport receive this */
     const uint8_t rx_enc_data[28] = "\n" "\x06\x09"
@@ -306,7 +306,7 @@ void test_smp_serial_read_garbage_before(void)
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
 }
 
-void test_smp_serial_read_chunked(void)
+static void test_smp_serial_read_chunked(void)
 {
     /* make transport receive this */
     const uint8_t rx_enc_data[28] = "\n" "\x06\x09"
@@ -333,7 +333,7 @@ void test_smp_serial_read_chunked(void)
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
 }
 
-void test_smp_serial_read_chunked_unaligned(void)
+static void test_smp_serial_read_chunked_unaligned(void)
 {
     /* make transport receive this, first byte in chunk before */
     const uint8_t rx_enc_data[26] = "\x09"
@@ -363,7 +363,7 @@ void test_smp_serial_read_chunked_unaligned(void)
 }
 
 
-void test_smp_serial_read_fragmented(void)
+static void test_smp_serial_read_fragmented(void)
 {
     /* make transport receive this */
     const uint8_t rx_enc_data1[127] = "\x06\x09"
@@ -397,12 +397,12 @@ void test_smp_serial_read_fragmented(void)
 }
 
 
-void suite_smp_serial(void)
+static void suite_smp_serial(void)
 {
     const char *sn =  "Suite SMP serial transport";
 
-    // pt_add_test(test_smp_serial_write_hello, "Serial port write: Hello", sn);
-    // pt_add_test(test_smp_serial_write_mgmt_rc, "Serial port write: MGMT RC", sn);
+    pt_add_test(test_smp_serial_write_hello, "Serial port write: Hello", sn);
+    pt_add_test(test_smp_serial_write_mgmt_rc, "Serial port write: MGMT RC", sn);
 
     pt_add_test(test_smp_serial_read, "Serial port read: MGMT RC", sn);
     pt_add_test(test_smp_serial_read_wrong_pktlen, "Serial port read: pktlen -2: MGMT RC", sn);

@@ -15,7 +15,7 @@
 
 #include "smp_serial.h"
 
-void test_cli_parse_serial_connstring(void)
+static void test_cli_parse_serial_connstring(void)
 {
     int rc;
     const char args[] = {
@@ -35,7 +35,7 @@ void test_cli_parse_serial_connstring(void)
 }
 
 
-void suite_cli_parse_serial(void)
+static void suite_cli_parse_serial(void)
 {
     const char *sn =  "Suite CLI parsing";
 

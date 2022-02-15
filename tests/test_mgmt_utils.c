@@ -13,7 +13,7 @@
 #include "mgmt_img.h"
 #include "mgmt_utils.h"
 
-void test_slot_flags_active(void)
+static void test_slot_flags_active(void)
 {
     /* test if buffer is long enough for every flag */
     char flags_buf[SLOT_FLAGS_STR_MAX];
@@ -30,7 +30,7 @@ void test_slot_flags_active(void)
 }
 
 
-void test_slot_flags_pending(void)
+static void test_slot_flags_pending(void)
 {
     /* test if buffer is long enough for every flag */
     char flags_buf[SLOT_FLAGS_STR_MAX];
@@ -45,7 +45,7 @@ void test_slot_flags_pending(void)
 }
 
 
-void test_slot_flags_full(void)
+static void test_slot_flags_full(void)
 {
     /* test if buffer is long enough for every flag */
     char flags_buf[SLOT_FLAGS_STR_MAX];
@@ -80,7 +80,7 @@ static const char hash_str[] = "ac352c1f56adcb10292da6e1be6d8672"
                                "acaa7b34323a33b35bdba9aa2583c6e0";
 
 
-void test_image_parse_hash(void)
+static void test_image_parse_hash(void)
 {
     uint8_t hash_buf[33];
     memset(hash_buf, 0, 33);
@@ -93,7 +93,7 @@ void test_image_parse_hash(void)
 
 }
 
-void test_image_parse_hash_short_buf(void)
+static void test_image_parse_hash_short_buf(void)
 {
     uint8_t hash_buf[33];
     memset(hash_buf, 0, 33);
@@ -105,7 +105,7 @@ void test_image_parse_hash_short_buf(void)
     PT_ASSERT(hash_buf[31] == '\0');
 }
 
-void test_image_parse_hash_invalid_char_1(void)
+static void test_image_parse_hash_invalid_char_1(void)
 {
     uint8_t hash_buf[3];
     const char *hash_string = "123G";
@@ -114,7 +114,7 @@ void test_image_parse_hash_invalid_char_1(void)
     PT_ASSERT(ret == -EINVAL);
 }
 
-void test_image_parse_hash_invalid_char_2(void)
+static void test_image_parse_hash_invalid_char_2(void)
 {
     uint8_t hash_buf[2];
     const char *hash_string = "g";
@@ -122,7 +122,7 @@ void test_image_parse_hash_invalid_char_2(void)
     PT_ASSERT(ret == -EINVAL);
 }
 
-void test_image_parse_hash_invalid_char_3(void)
+static void test_image_parse_hash_invalid_char_3(void)
 {
     uint8_t hash_buf[2];
     const char *hash_string = ":";
@@ -130,7 +130,7 @@ void test_image_parse_hash_invalid_char_3(void)
     PT_ASSERT(ret == -EINVAL);
 }
 
-void test_image_parse_hash_invalid_char_4(void)
+static void test_image_parse_hash_invalid_char_4(void)
 {
     uint8_t hash_buf[2];
     const char *hash_string = "/";
@@ -138,7 +138,7 @@ void test_image_parse_hash_invalid_char_4(void)
     PT_ASSERT(ret == -EINVAL);
 }
 
-void test_image_parse_hash_invalid_char_5(void)
+static void test_image_parse_hash_invalid_char_5(void)
 {
     uint8_t hash_buf[2];
     const char *hash_string = "@";
@@ -146,7 +146,7 @@ void test_image_parse_hash_invalid_char_5(void)
     PT_ASSERT(ret == -EINVAL);
 }
 
-void test_image_parse_hash_invalid_char_6(void)
+static void test_image_parse_hash_invalid_char_6(void)
 {
     uint8_t hash_buf[2];
     const char *hash_string = "`";
@@ -155,7 +155,7 @@ void test_image_parse_hash_invalid_char_6(void)
 }
 
 
-void test_image_parse_hash_odd_len(void)
+static void test_image_parse_hash_odd_len(void)
 {
     uint8_t hash_buf[33];
     const char *hash_string = "123";
@@ -166,7 +166,7 @@ void test_image_parse_hash_odd_len(void)
 }
 
 
-void test_image_print_hash(void)
+static void test_image_print_hash(void)
 {
     char str_buf[65];
     int ret = hexlify(hash, sizeof(hash), str_buf, sizeof(str_buf));
@@ -175,7 +175,7 @@ void test_image_print_hash(void)
     PT_ASSERT_MEM_EQ(str_buf, hash_str, 65); /* including \0 byte */
 }
 
-void test_image_print_hash_short_buf(void)
+static void test_image_print_hash_short_buf(void)
 {
     char str_buf[61];
     int ret = hexlify(hash, sizeof(hash), str_buf, sizeof(str_buf));
@@ -185,7 +185,7 @@ void test_image_print_hash_short_buf(void)
     PT_ASSERT(str_buf[60] == 0); /* including \0 byte */
 }
 
-void test_image_print_hash_no_null_bytes_space(void)
+static void test_image_print_hash_no_null_bytes_space(void)
 {
     char str_buf[64];
     int ret = hexlify(hash, sizeof(hash), str_buf, sizeof(str_buf));
@@ -197,7 +197,7 @@ void test_image_print_hash_no_null_bytes_space(void)
     PT_ASSERT(str_buf[62] == '\0'); /* including \0 byte */
 }
 
-void suite_img_parse_utils(void)
+static void suite_img_parse_utils(void)
 {
     const char *sn = "Suite MCUboot image parsing utils";
 

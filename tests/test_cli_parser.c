@@ -56,7 +56,7 @@ static void check_shuffle(int argc, char **argv, const char **args)
  * @brief Test -h option
  *
  */
-void test_cli_parse_common_help(void)
+static void test_cli_parse_common_help(void)
 {
     int argc = 2;
     const char *args[] = {
@@ -84,7 +84,7 @@ void test_cli_parse_common_help(void)
  * @brief Test long --help option
  *
  */
-void test_cli_parse_common_help_long(void)
+static void test_cli_parse_common_help_long(void)
 {
     int argc = 2;
     const char *args[] = {
@@ -112,7 +112,7 @@ void test_cli_parse_common_help_long(void)
  * @brief Test unknown option
  *
  */
-void test_cli_parse_common_unknown(void)
+static void test_cli_parse_common_unknown(void)
 {
     int argc = 2;
     const char *args[] = {
@@ -142,7 +142,7 @@ void test_cli_parse_common_unknown(void)
  * @brief Test -v option
  *
  */
-void test_cli_parse_common_verbose_1(void)
+static void test_cli_parse_common_verbose_1(void)
 {
     int argc = 2;
     const char *args[] = {
@@ -171,7 +171,7 @@ void test_cli_parse_common_verbose_1(void)
  * @brief Test -v -v option
  *
  */
-void test_cli_parse_common_verbose_2(void)
+static void test_cli_parse_common_verbose_2(void)
 {
     int argc = 3;
     const char *args[] = {
@@ -200,7 +200,7 @@ void test_cli_parse_common_verbose_2(void)
  * @brief Test -v -v option
  *
  */
-void test_cli_parse_common_verbose_3(void)
+static void test_cli_parse_common_verbose_3(void)
 {
     int argc = 2;
     const char *args[] = {
@@ -230,7 +230,7 @@ void test_cli_parse_common_verbose_3(void)
  * @brief Test -v -v -h -V option
  *
  */
-void test_cli_parse_common_all(void)
+static void test_cli_parse_common_all(void)
 {
     int argc = 5;
     const char *args[] = {
@@ -263,7 +263,7 @@ void test_cli_parse_common_all(void)
  * @brief Test -s=dev=/dev/ttyUSB0 option
  *
  */
-void test_cli_parse_common_connstring(void)
+static void test_cli_parse_common_connstring(void)
 {
     int argc = 5;
     const char *args[] = {
@@ -294,7 +294,7 @@ void test_cli_parse_common_connstring(void)
  * @brief Test -sdev=/dev/ttyUSB0 option
  *
  */
-void test_cli_parse_common_connstring_2(void)
+static void test_cli_parse_common_connstring_2(void)
 {
     int argc = 4;
     const char *args[] = {
@@ -326,7 +326,7 @@ void test_cli_parse_common_connstring_2(void)
  * @brief Test -s=dev=/dev/ttyUSB0 option
  *
  */
-void test_cli_parse_common_connstring_3(void)
+static void test_cli_parse_common_connstring_3(void)
 {
     int argc = 4;
     const char *args[] = {
@@ -359,7 +359,7 @@ void test_cli_parse_common_connstring_3(void)
  * @brief Test cmd arg
  *
  */
-void test_cli_parse_common_cmd(void)
+static void test_cli_parse_common_cmd(void)
 {
     int argc = 4;
     const char *args[] = {
@@ -394,7 +394,7 @@ void test_cli_parse_common_cmd(void)
  * @brief Test cmd arg with arg
  *
  */
-void test_cli_parse_common_cmd_w_arg(void)
+static void test_cli_parse_common_cmd_w_arg(void)
 {
     int argc = 5;
     const char *args[] = {
@@ -429,7 +429,7 @@ void test_cli_parse_common_cmd_w_arg(void)
     free(argv);
 }
 
-void test_cli_parse_common_einval_1(void)
+static void test_cli_parse_common_einval_1(void)
 {
     int argc = 0;
     const char *args[] = { "mcumgr" };
@@ -441,7 +441,7 @@ void test_cli_parse_common_einval_1(void)
 }
 
 
-void test_cli_parse_common_einval_2(void)
+static void test_cli_parse_common_einval_2(void)
 {
     int argc = 1;
     struct cli_options copts;
@@ -450,7 +450,7 @@ void test_cli_parse_common_einval_2(void)
 }
 
 
-void test_cli_parse_common_einval_3(void)
+static void test_cli_parse_common_einval_3(void)
 {
     int argc = 1;
     const char *args[] = { "mcumgr" };
@@ -460,31 +460,7 @@ void test_cli_parse_common_einval_3(void)
     PT_ASSERT(rc == -EINVAL);
 }
 
-void test_cli_parse_common_missing_optarg_c(void)
-{
-    int argc = 2;
-    const char *args[] = { "mcumgr", "-c" };
-    char **argv = build_options(argc, args);
-    struct cli_options copts;
-
-    int rc = parse_cli_options(argc, argv, &copts);
-    PT_ASSERT(rc == -ENODATA);
-}
-
-
-void test_cli_parse_common_missing_optarg_t(void)
-{
-    int argc = 2;
-    const char *args[] = { "mcumgr", "-t" };
-    char **argv = build_options(argc, args);
-    struct cli_options copts;
-
-    int rc = parse_cli_options(argc, argv, &copts);
-    PT_ASSERT(rc == -ENODATA);
-}
-
-
-void test_cli_parse_common_missing_optarg_s(void)
+static void test_cli_parse_common_missing_optarg_c(void)
 {
     int argc = 2;
     const char *args[] = { "mcumgr", "-s" };
@@ -496,7 +472,31 @@ void test_cli_parse_common_missing_optarg_s(void)
 }
 
 
-void test_cli_parse_common_missing_arg(void)
+static void test_cli_parse_common_missing_optarg_t(void)
+{
+    int argc = 2;
+    const char *args[] = { "mcumgr", "-t" };
+    char **argv = build_options(argc, args);
+    struct cli_options copts;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+    PT_ASSERT(rc == -ENODATA);
+}
+
+
+static void test_cli_parse_common_missing_optarg_s(void)
+{
+    int argc = 2;
+    const char *args[] = { "mcumgr", "-s" };
+    char **argv = build_options(argc, args);
+    struct cli_options copts;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+    PT_ASSERT(rc == -ENODATA);
+}
+
+
+static void test_cli_parse_common_missing_arg(void)
 {
     int argc = 1;
     const char *args[] = { "mcumgr" };
@@ -509,7 +509,7 @@ void test_cli_parse_common_missing_arg(void)
     // PT_ASSERT(rc == 0);
 }
 
-void test_cli_parse_common_unrecognized_option(void)
+static void test_cli_parse_common_unrecognized_option(void)
 {
     int argc = 3;
     const char *args[] = { "mcumgr", "-x", "reset" };
@@ -520,7 +520,7 @@ void test_cli_parse_common_unrecognized_option(void)
     PT_ASSERT(rc == -ENOENT);
 }
 
-void test_cli_parse_common_unrecognized_command(void)
+static void test_cli_parse_common_unrecognized_command(void)
 {
     int argc = 2;
     const char *args[] = { "mcumgr", "foobar" };
@@ -528,11 +528,11 @@ void test_cli_parse_common_unrecognized_command(void)
     struct cli_options copts;
 
     int rc = parse_cli_options(argc, argv, &copts);
-    PT_ASSERT(rc == -ENOENT);
+    PT_ASSERT(rc == -ENOMSG);
 }
 
 
-void suite_cli_parse_common(void)
+static void suite_cli_parse_common(void)
 {
     const char *sn =  "Suite CLI parsing";
 
@@ -567,7 +567,7 @@ void suite_cli_parse_common(void)
  * @brief Test echo cmd arg with arg
  *
  */
-void test_cli_parse_full_echo_cmd_w_arg(void)
+static void test_cli_parse_full_echo_cmd_w_arg(void)
 {
     int argc = 4;
     const char *args[] = {
@@ -602,8 +602,6 @@ void test_cli_parse_full_echo_cmd_w_arg(void)
     check_shuffle(argc, argv, args);
 
     if (copts.subcmd == CMD_ECHO) {
-        PT_ASSERT(copts.help == 0);
-        PT_ASSERT(copts.cmd == argv[2]);
         PT_ASSERT(copts.cmdopts.os_echo.echo_str != NULL);
         if (copts.cmdopts.os_echo.echo_str)
             PT_ASSERT_STR_EQ("Hallo", copts.cmdopts.os_echo.echo_str);
@@ -618,12 +616,12 @@ void test_cli_parse_full_echo_cmd_w_arg(void)
  * @brief Test echo cmd arg with connstring
  *
  */
-void test_cli_parse_full_echo_cmd_w_connstring(void)
+static void test_cli_parse_full_echo_cmd_w_connstring(void)
 {
     int argc = 4;
     const char *args[] = {
         "mcumgr",
-        "-c=dev=/dev/ttyUSB0,baudrate=230400",
+        "-s=dev=/dev/ttyUSB0,baud=230400",
         "echo",
         "Hallo",
     };
@@ -651,12 +649,10 @@ void test_cli_parse_full_echo_cmd_w_connstring(void)
     check_shuffle(argc, argv, args);
 
     if (copts.connstring) {
-        PT_ASSERT_STR_EQ("dev=/dev/ttyUSB0,baudrate=230400", copts.connstring);
+        PT_ASSERT_STR_EQ("dev=/dev/ttyUSB0,baud=230400", copts.connstring);
     }
 
     if (copts.subcmd == CMD_ECHO) {
-        PT_ASSERT(copts.help == 0);
-        PT_ASSERT(copts.cmd == argv[2]);
         PT_ASSERT(copts.cmdopts.os_echo.echo_str != NULL);
         if (copts.cmdopts.os_echo.echo_str)
             PT_ASSERT_STR_EQ("Hallo", copts.cmdopts.os_echo.echo_str);
@@ -671,7 +667,7 @@ void test_cli_parse_full_echo_cmd_w_connstring(void)
  * @brief Test echo cmd arg with arg
  *
  */
-void test_cli_parse_full_echo_cmd_help(void)
+static void test_cli_parse_full_echo_cmd_help(void)
 {
     int argc = 4;
     const char *args[] = {
@@ -706,8 +702,6 @@ void test_cli_parse_full_echo_cmd_help(void)
     check_shuffle(argc, argv, args);
 
     if (copts.subcmd == CMD_ECHO) {
-        PT_ASSERT(copts.help == 1);
-        PT_ASSERT(copts.cmd == argv[2]);
         PT_ASSERT(copts.cmdopts.os_echo.echo_str == NULL);
 
         check_shuffle(argc, argv, args);
@@ -721,7 +715,7 @@ void test_cli_parse_full_echo_cmd_help(void)
  * @brief Test echo cmd arg with arg
  *
  */
-void test_cli_parse_full_echo_cmd_w_access_arg(void)
+static void test_cli_parse_full_echo_cmd_w_access_arg(void)
 {
     int argc = 5;
     const char *args[] = {
@@ -757,8 +751,6 @@ void test_cli_parse_full_echo_cmd_w_access_arg(void)
     check_shuffle(argc, argv, args);
 
     if (copts.subcmd == CMD_ECHO) {
-        PT_ASSERT(copts.help == 0);
-        PT_ASSERT(copts.cmd == argv[2]);
         PT_ASSERT(copts.cmdopts.os_echo.echo_str != NULL);
         if (copts.cmdopts.os_echo.echo_str)
             PT_ASSERT_STR_EQ("Hallo", copts.cmdopts.os_echo.echo_str);
@@ -774,7 +766,7 @@ void test_cli_parse_full_echo_cmd_w_access_arg(void)
  * @brief Test echo cmd arg with arg
  *
  */
-void test_cli_parse_full_echo_cmd_w_missing_arg(void)
+static void test_cli_parse_full_echo_cmd_w_missing_arg(void)
 {
     int argc = 3;
     const char *args[] = {
@@ -820,12 +812,12 @@ void test_cli_parse_full_echo_cmd_w_missing_arg(void)
 
 
 
-void suite_cli_parse_echo(void)
+static void suite_cli_parse_echo(void)
 {
     const char *sn = "Suite CLI parsing echo";
 
     pt_add_test(test_cli_parse_full_echo_cmd_w_arg, "Test parsing OS echo CLI options full: mcumgr -v echo Hallo", sn);
-    pt_add_test(test_cli_parse_full_echo_cmd_w_connstring, "Test parsing OS echo CLI options full: mcumgr -c... -v echo Hallo", sn);
+    pt_add_test(test_cli_parse_full_echo_cmd_w_connstring, "Test parsing OS echo CLI options full: mcumgr -s... -v echo Hallo", sn);
     pt_add_test(test_cli_parse_full_echo_cmd_help, "Test parsing OS echo common CLI options: help: mcumgr -v echo -h", sn);
 
 
@@ -840,7 +832,7 @@ void suite_cli_parse_echo(void)
  * @brief Test reset cmd arg with arg
  *
  */
-void test_cli_parse_full_reset_cmd(void)
+static void test_cli_parse_full_reset_cmd(void)
 {
     int argc = 3;
     const char *args[] = {
@@ -880,12 +872,12 @@ void test_cli_parse_full_reset_cmd(void)
  * @brief Test reset cmd arg with connstring
  *
  */
-void test_cli_parse_full_reset_cmd_w_connstring(void)
+static void test_cli_parse_full_reset_cmd_w_connstring(void)
 {
     int argc = 3;
     const char *args[] = {
         "mcumgr",
-        "-c=dev=/dev/ttyUSB0,baudrate=230400",
+        "-s=dev=/dev/ttyUSB0,baud=230400",
         "reset",
     };
     char **argv = build_options(argc, args);
@@ -912,7 +904,7 @@ void test_cli_parse_full_reset_cmd_w_connstring(void)
     check_shuffle(argc, argv, args);
 
     if (copts.connstring) {
-        PT_ASSERT_STR_EQ("dev=/dev/ttyUSB0,baudrate=230400", copts.connstring);
+        PT_ASSERT_STR_EQ("dev=/dev/ttyUSB0,baud=230400", copts.connstring);
     }
 
     free(argv);
@@ -922,7 +914,7 @@ void test_cli_parse_full_reset_cmd_w_connstring(void)
  * @brief Test reset cmd arg with -h arg
  *
  */
-void test_cli_parse_full_reset_cmd_help(void)
+static void test_cli_parse_full_reset_cmd_help(void)
 {
     int argc = 4;
     const char *args[] = {
@@ -964,7 +956,7 @@ void test_cli_parse_full_reset_cmd_help(void)
  * @brief Test reset cmd arg with access arg
  *
  */
-void test_cli_parse_full_reset_cmd_w_access_arg(void)
+static void test_cli_parse_full_reset_cmd_w_access_arg(void)
 {
     int argc = 4;
     const char *args[] = {
@@ -1002,7 +994,7 @@ void test_cli_parse_full_reset_cmd_w_access_arg(void)
 }
 
 
-void suite_cli_parse_reset(void)
+static void suite_cli_parse_reset(void)
 {
     const char *sn = "Suite CLI parsing reset";
 
@@ -1019,7 +1011,7 @@ void suite_cli_parse_reset(void)
  * @brief Test analyze cmd arg with filename arg
  *
  */
-void test_cli_parse_analyze(void)
+static void test_cli_parse_analyze(void)
 {
     int argc = 3;
     const char *args[] = {
@@ -1063,7 +1055,7 @@ void test_cli_parse_analyze(void)
     free(argv);
 }
 
-void suite_cli_parse_analyze(void)
+static void suite_cli_parse_analyze(void)
 {
     const char *sn = "Suite CLI parsing analyze";
     pt_add_test(test_cli_parse_analyze, "Test parsing analyze CLI options: analyze some_file.bin", sn);

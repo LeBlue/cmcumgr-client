@@ -14,7 +14,7 @@
 /* must exist for the test with "Hello World!\n" content */
 static const char *test_file_name = "file_reader_in.txt";
 
-void test_file_unix_init(void)
+static void test_file_unix_init(void)
 {
     struct file_reader reader;
     struct file_unix_handle fh;
@@ -30,7 +30,7 @@ void test_file_unix_init(void)
     PT_ASSERT(reader.op->close != NULL);
 }
 
-void test_file_unix_init_fail_1(void)
+static void test_file_unix_init_fail_1(void)
 {
     struct file_unix_handle fh;
     int ret = file_unix_init(NULL, &fh, test_file_name);
@@ -38,7 +38,7 @@ void test_file_unix_init_fail_1(void)
     PT_ASSERT(ret == -EINVAL);
 }
 
-void test_file_unix_init_fail_2(void)
+static void test_file_unix_init_fail_2(void)
 {
     struct file_reader reader;
     int ret = file_unix_init(&reader, NULL, test_file_name);
@@ -46,7 +46,7 @@ void test_file_unix_init_fail_2(void)
     PT_ASSERT(ret == -EINVAL);
 }
 
-void test_file_unix_init_fail_3(void)
+static void test_file_unix_init_fail_3(void)
 {
     struct file_reader reader;
     struct file_unix_handle fh;
@@ -56,7 +56,7 @@ void test_file_unix_init_fail_3(void)
 }
 
 
-void test_file_open(void)
+static void test_file_open(void)
 {
     struct file_reader reader;
     struct file_unix_handle fh;
@@ -74,7 +74,7 @@ void test_file_open(void)
 }
 
 
-void test_file_open_fail_1(void)
+static void test_file_open_fail_1(void)
 {
     struct file_reader reader;
     struct file_unix_handle fh;
@@ -91,7 +91,7 @@ void test_file_open_fail_1(void)
     }
 }
 
-void test_file_open_fail_2(void)
+static void test_file_open_fail_2(void)
 {
     struct file_reader reader;
     struct file_unix_handle fh;
@@ -106,7 +106,7 @@ void test_file_open_fail_2(void)
 
 
 
-void test_file_read(void)
+static void test_file_read(void)
 {
     struct file_reader reader;
     struct file_unix_handle fh;
@@ -130,7 +130,7 @@ void test_file_read(void)
     }
 }
 
-void test_file_read_offset(void)
+static void test_file_read_offset(void)
 {
     struct file_reader reader;
     struct file_unix_handle fh;
@@ -155,7 +155,7 @@ void test_file_read_offset(void)
 }
 
 
-void test_file_read_end(void)
+static void test_file_read_end(void)
 {
     struct file_reader reader;
     struct file_unix_handle fh;
@@ -180,7 +180,7 @@ void test_file_read_end(void)
 }
 
 
-void suite_file_reader(void)
+static void suite_file_reader(void)
 {
     pt_add_test(test_file_unix_init, "Test reading file: init: OK", "Suite file reader");
     pt_add_test(test_file_unix_init_fail_1, "Test reading file: init: fail 1", "Suite file reader");
@@ -189,7 +189,7 @@ void suite_file_reader(void)
 
     pt_add_test(test_file_open, "Test reading file: open: OK", "Suite file reader");
     pt_add_test(test_file_open_fail_1, "Test reading file: open: fail 1", "Suite file reader");
-    pt_add_test(test_file_open_fail_1, "Test reading file: open: fail 2", "Suite file reader");
+    pt_add_test(test_file_open_fail_2, "Test reading file: open: fail 2", "Suite file reader");
 
     pt_add_test(test_file_read, "Test reading file: read at 0: OK", "Suite file reader");
     pt_add_test(test_file_read_offset, "Test reading file: read at 1: OK", "Suite file reader");

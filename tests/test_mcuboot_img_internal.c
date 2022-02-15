@@ -25,7 +25,7 @@ static const uint8_t magic_swapped_header[32] = {
 };
 
 
-void test_mcuboot_image_valid(void)
+static void test_mcuboot_image_valid(void)
 {
     const struct mcuboot_image_hdr *img_hdr = (struct mcuboot_image_hdr *) valid_header;
 
@@ -33,21 +33,21 @@ void test_mcuboot_image_valid(void)
 }
 
 
-void test_mcuboot_image_invalid(void)
+static void test_mcuboot_image_invalid(void)
 {
     const struct mcuboot_image_hdr *img_hdr = (struct mcuboot_image_hdr *) magic_swapped_header;
 
     PT_ASSERT(mcuboot_image_valid(img_hdr) == 0);
 }
 
-void test_img_parse_hdr_size(void)
+static void test_img_parse_hdr_size(void)
 {
     const struct mcuboot_image_hdr *img_hdr = (struct mcuboot_image_hdr *) valid_header;
 
     PT_ASSERT(mcuboot_image_get_image_size(img_hdr) == 67844);
 }
 
-void test_img_parse_hdr_tlv_offset(void)
+static void test_img_parse_hdr_tlv_offset(void)
 {
     const struct mcuboot_image_hdr *img_hdr = (struct mcuboot_image_hdr *) valid_header;
 
@@ -55,7 +55,7 @@ void test_img_parse_hdr_tlv_offset(void)
 }
 
 
-void test_img_parse_hdr_version(void)
+static void test_img_parse_hdr_version(void)
 {
     const struct mcuboot_image_hdr *img_hdr = (struct mcuboot_image_hdr *) valid_header;
     struct image_version version;
@@ -69,7 +69,7 @@ void test_img_parse_hdr_version(void)
 
 
 
-void suite_img_parse_header(void)
+static void suite_img_parse_header(void)
 {
     const char *sn = "Suite MCUboot header";
 

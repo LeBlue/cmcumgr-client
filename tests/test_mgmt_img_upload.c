@@ -27,7 +27,7 @@ static const uint8_t hash[32] = "0123456789ABCDEF" "0123456789ABCDEF";
  * @brief Test image upload start packet is encoded correctly
  *
  */
-void test_encode_mgmt_img_upload_start(void)
+static void test_encode_mgmt_img_upload_start(void)
 {
     size_t cnt;
     uint8_t buf[CBOR_BUF_SZ + 1];
@@ -69,7 +69,7 @@ void test_encode_mgmt_img_upload_start(void)
  * @brief Test image upload continue packet is encoded correctly
  *
  */
-void test_encode_mgmt_img_upload_continue(void)
+static void test_encode_mgmt_img_upload_continue(void)
 {
     size_t cnt;
     uint8_t buf[CBOR_BUF_SZ + 1];
@@ -96,7 +96,7 @@ void test_encode_mgmt_img_upload_continue(void)
 }
 
 
-void suite_mgmt_img_req_encode(void)
+static void suite_mgmt_img_req_encode(void)
 {
     const char *sn = "Suite Cbor encode image upload req";
 

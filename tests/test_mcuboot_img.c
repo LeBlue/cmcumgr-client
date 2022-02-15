@@ -17,7 +17,7 @@ static const uint8_t hash[32] = "\xac\x35\x2c\x1f\x56\xad\xcb\x10\x29\x2d\xa6\xe
                                 "\xac\xaa\x7b\x34\x32\x3a\x33\xb3\x5b\xdb\xa9\xaa\x25\x83\xc6\xe0";
 
 
-void test_img_parse_file(void)
+static void test_img_parse_file(void)
 {
     struct file_unix_handle fh;
     struct file_reader reader;
@@ -40,7 +40,7 @@ void test_img_parse_file(void)
     }
 }
 
-void test_img_parse_file_truncated_1(void)
+static void test_img_parse_file_truncated_1(void)
 {
     struct file_unix_handle fh;
     struct file_reader reader;
@@ -56,7 +56,7 @@ void test_img_parse_file_truncated_1(void)
     }
 }
 
-void suite_img_parse_file(void)
+static void suite_img_parse_file(void)
 {
     const char *sn = "Suite MCUboot image parsing";
 
