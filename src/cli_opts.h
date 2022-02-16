@@ -48,9 +48,9 @@ struct cli_options {
     char optopt;
     int timeout;
 
-    /* command string and index in original argv */
+    /* command string  */
     const char *cmd;
-    int cmdind;
+    /* command id */
     subcommand subcmd;
     /* subcommand opts can share mem */
     union {

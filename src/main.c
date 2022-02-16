@@ -66,11 +66,38 @@ void print_usage_or_error(struct cli_options *copts, int rc)
             fprintf(stderr, "Options parsing failed\n");
             exit(1);
         case -ENOENT:
-            if (copts->cmd) {
-                fprintf(stderr, "Unrecognized option '-%c' for '%s'\n", copts->optopt, copts->cmd);
+        {
+            const char *errmsg;
+            const char *optstr;
+            char tmpstr[] = "-?";
+            if (copts->optopt || copts->argv[0][0] == '-') {
+                errmsg = "Unrecognized option";
+                if (copts->optopt) {
+                    tmpstr[1] = (char)copts->optopt;
+                    optstr = tmpstr;
+                } else {
+                    optstr = copts->argv[0];
+                }
             } else {
-                fprintf(stderr, "Unrecognized option '-%c'\n", copts->optopt);
+                errmsg = "Unrecognized command";
+                optstr = copts->argv[0];
             }
+            if (copts->cmd) {
+                fprintf(stderr, "%s '%s' for '%s'\n", errmsg, optstr, copts->cmd);
+            } else {
+                fprintf(stderr, "%s '%s'\n", errmsg, optstr);
+            }
+            exit(1);
+        }
+        case -ENOMSG:
+            if (copts->cmd) {
+                fprintf(stderr, "Missing subcommand for '%s'\n", copts->cmd);
+            } else {
+                fprintf(stderr, "Missing subcommand\n");
+            }
+            exit(1);
+        case -EBADMSG:
+            fprintf(stderr, "Invalid format for argument '%s'\n", copts->argv[0]);
             exit(1);
         default:
             fprintf(stderr, "Options parsing failed: %s\n", strerror(-rc));

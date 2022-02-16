@@ -137,6 +137,39 @@ static void test_cli_parse_common_unknown(void)
     free(argv);
 }
 
+/**
+ * @brief Test unknown option
+ *
+ */
+static void test_cli_parse_common_unknown_long(void)
+{
+    int argc = 2;
+    const char *args[] = {
+        "mcumgr",
+        "--kv",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts;
+    optind = 0;
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == -ENOENT);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 0);
+    PT_ASSERT(copts.help == 0);
+    PT_ASSERT(copts.cmd == NULL);
+    PT_ASSERT(copts.optopt == 0);
+    PT_ASSERT(copts.argv[0] != NULL);
+    if (copts.argv[0])
+        PT_ASSERT_STR_EQ(copts.argv[0], "--kv");
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+
 
 /**
  * @brief Test -v option
@@ -353,6 +386,67 @@ static void test_cli_parse_common_connstring_3(void)
     free(argv);
 }
 
+/**
+ * @brief Test --connstring=dev=/dev/ttyUSB0 option
+ *
+ */
+static void test_cli_parse_common_connstring_4(void)
+{
+    int argc = 4;
+    const char *args[] = {
+        "mcumgr",
+        "-v",
+        "-v",
+        "--connstring=dev=/dev/ttyUSB0"
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts;
+    optind = 0;
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == -ENOMSG); /* missing commmand */
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 2);
+    PT_ASSERT(copts.help == 0);
+    PT_ASSERT(copts.cmd == NULL);
+    PT_ASSERT_STR_EQ("dev=/dev/ttyUSB0", copts.connstring);
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+/**
+ * @brief Test --connstring dev=/dev/ttyUSB0 option
+ *
+ */
+static void test_cli_parse_common_connstring_5(void)
+{
+    int argc = 5;
+    const char *args[] = {
+        "mcumgr",
+        "-v",
+        "-v",
+        "--connstring", "dev=/dev/ttyUSB0"
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts;
+    optind = 0;
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == -ENOMSG); /* missing commmand */
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 2);
+    PT_ASSERT(copts.help == 0);
+    PT_ASSERT(copts.cmd == NULL);
+    PT_ASSERT_STR_EQ("dev=/dev/ttyUSB0", copts.connstring);
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
 
 
 /**
@@ -379,7 +473,6 @@ static void test_cli_parse_common_cmd(void)
     PT_ASSERT(copts.verbose == 2);
     PT_ASSERT(copts.help == 0);
     PT_ASSERT(copts.cmd != NULL);
-    PT_ASSERT(copts.cmdind == 3);
     PT_ASSERT(copts.cmd == argv[3]);
 
     if (copts.cmd)
@@ -416,7 +509,6 @@ static void test_cli_parse_common_cmd_w_arg(void)
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 2);
     PT_ASSERT(copts.help == 0);
-    PT_ASSERT(copts.cmdind == 3);
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[3]);
     PT_ASSERT(copts.subcmd == CMD_RESET);
@@ -528,7 +620,7 @@ static void test_cli_parse_common_unrecognized_command(void)
     struct cli_options copts;
 
     int rc = parse_cli_options(argc, argv, &copts);
-    PT_ASSERT(rc == -ENOMSG);
+    PT_ASSERT(rc == -ENOENT);
 }
 
 
@@ -539,6 +631,7 @@ static void suite_cli_parse_common(void)
     pt_add_test(test_cli_parse_common_help, "Test parsing common CLI options: -h", sn);
     pt_add_test(test_cli_parse_common_help_long, "Test parsing common CLI options: --help", sn);
     pt_add_test(test_cli_parse_common_unknown, "Test parsing common CLI options: -k unknown", sn);
+    pt_add_test(test_cli_parse_common_unknown_long, "Test parsing common CLI options: --kv", sn);
     pt_add_test(test_cli_parse_common_verbose_1, "Test parsing common CLI options: -v", sn);
     pt_add_test(test_cli_parse_common_verbose_2, "Test parsing common CLI options: -v -v", sn);
     pt_add_test(test_cli_parse_common_verbose_3, "Test parsing common CLI options: -vv", sn);
@@ -546,6 +639,8 @@ static void suite_cli_parse_common(void)
     pt_add_test(test_cli_parse_common_connstring, "Test parsing common CLI options: -s dev=/dev/ttyUSB0", sn);
     pt_add_test(test_cli_parse_common_connstring_2, "Test parsing common CLI options: -sdev=/dev/ttyUSB0", sn);
     pt_add_test(test_cli_parse_common_connstring_3, "Test parsing common CLI options: -s=dev=/dev/ttyUSB0", sn);
+    pt_add_test(test_cli_parse_common_connstring_4, "Test parsing common CLI options: --connstring=dev=/dev/ttyUSB0", sn);
+    pt_add_test(test_cli_parse_common_connstring_5, "Test parsing common CLI options: --connstring dev=/dev/ttyUSB0", sn);
     pt_add_test(test_cli_parse_common_cmd, "Test parsing common CLI options: -v -v reset", sn);
     pt_add_test(test_cli_parse_common_cmd_w_arg, "Test parsing common CLI options: -v -v reset -v", sn);
 
@@ -588,7 +683,6 @@ static void test_cli_parse_full_echo_cmd_w_arg(void)
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 0);
-    PT_ASSERT(copts.cmdind == 2);
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[2]);
     PT_ASSERT(copts.subcmd == CMD_ECHO);
@@ -636,7 +730,6 @@ static void test_cli_parse_full_echo_cmd_w_connstring(void)
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 0);
     PT_ASSERT(copts.help == 0);
-    PT_ASSERT(copts.cmdind == 2);
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[2]);
     PT_ASSERT(copts.subcmd == CMD_ECHO);
@@ -663,11 +756,114 @@ static void test_cli_parse_full_echo_cmd_w_connstring(void)
     free(argv);
 }
 
+
+/**
+ * @brief Test echo cmd arg with connstring longopt with equal
+ *
+ */
+static void test_cli_parse_full_echo_cmd_w_connstring_long(void)
+{
+    int argc = 4;
+    const char *args[] = {
+        "mcumgr",
+        "--connstring=dev=/dev/ttyUSB0,baud=230400",
+        "echo",
+        "Hallo",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 0);
+    PT_ASSERT(copts.help == 0);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[2]);
+    PT_ASSERT(copts.subcmd == CMD_ECHO);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("echo", copts.cmd);
+
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+    PT_ASSERT(copts.connstring != NULL);
+    check_shuffle(argc, argv, args);
+
+    if (copts.connstring) {
+        PT_ASSERT_STR_EQ("dev=/dev/ttyUSB0,baud=230400", copts.connstring);
+    }
+
+    if (copts.subcmd == CMD_ECHO) {
+        PT_ASSERT(copts.cmdopts.os_echo.echo_str != NULL);
+        if (copts.cmdopts.os_echo.echo_str)
+            PT_ASSERT_STR_EQ("Hallo", copts.cmdopts.os_echo.echo_str);
+
+        check_shuffle(argc, argv, args);
+    }
+
+    free(argv);
+}
+
+
+/**
+ * @brief Test echo cmd arg with connstring longopt with 2 args
+ *
+ */
+static void test_cli_parse_full_echo_cmd_w_connstring_long_alt(void)
+{
+    int argc = 5;
+    const char *args[] = {
+        "mcumgr",
+        "--connstring", "dev=/dev/ttyUSB0,baud=230400",
+        "echo",
+        "Hallo",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 0);
+    PT_ASSERT(copts.help == 0);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[3]);
+    PT_ASSERT(copts.subcmd == CMD_ECHO);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("echo", copts.cmd);
+
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+    PT_ASSERT(copts.connstring != NULL);
+    check_shuffle(argc, argv, args);
+
+    if (copts.connstring) {
+        PT_ASSERT_STR_EQ("dev=/dev/ttyUSB0,baud=230400", copts.connstring);
+    }
+
+    if (copts.subcmd == CMD_ECHO) {
+        PT_ASSERT(copts.cmdopts.os_echo.echo_str != NULL);
+        if (copts.cmdopts.os_echo.echo_str)
+            PT_ASSERT_STR_EQ("Hallo", copts.cmdopts.os_echo.echo_str);
+
+        check_shuffle(argc, argv, args);
+    }
+
+    free(argv);
+}
+
+
 /**
  * @brief Test echo cmd arg with arg
  *
  */
-static void test_cli_parse_full_echo_cmd_help(void)
+static void test_cli_parse_echo_cmd_help(void)
 {
     int argc = 4;
     const char *args[] = {
@@ -688,7 +884,52 @@ static void test_cli_parse_full_echo_cmd_help(void)
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 1);
-    PT_ASSERT(copts.cmdind == 2);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[2]);
+    PT_ASSERT(copts.subcmd == CMD_ECHO);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("echo", copts.cmd);
+
+    /* everything consumed */
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+
+    check_shuffle(argc, argv, args);
+
+    if (copts.subcmd == CMD_ECHO) {
+        PT_ASSERT(copts.cmdopts.os_echo.echo_str == NULL);
+
+        check_shuffle(argc, argv, args);
+    }
+
+    free(argv);
+}
+
+/**
+ * @brief Test echo cmd help
+ *
+ */
+static void test_cli_parse_echo_cmd_help_long(void)
+{
+    int argc = 4;
+    const char *args[] = {
+        "mcumgr",
+        "-v",
+        "echo",
+        "--help",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 1);
+    PT_ASSERT(copts.help == 1);
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[2]);
     PT_ASSERT(copts.subcmd == CMD_ECHO);
@@ -715,7 +956,7 @@ static void test_cli_parse_full_echo_cmd_help(void)
  * @brief Test echo cmd arg with arg
  *
  */
-static void test_cli_parse_full_echo_cmd_w_access_arg(void)
+static void test_cli_parse_echo_cmd_w_access_arg(void)
 {
     int argc = 5;
     const char *args[] = {
@@ -737,7 +978,6 @@ static void test_cli_parse_full_echo_cmd_w_access_arg(void)
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 0);
-    PT_ASSERT(copts.cmdind == 2);
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[2]);
     PT_ASSERT(copts.subcmd == CMD_ECHO);
@@ -766,7 +1006,7 @@ static void test_cli_parse_full_echo_cmd_w_access_arg(void)
  * @brief Test echo cmd arg with arg
  *
  */
-static void test_cli_parse_full_echo_cmd_w_missing_arg(void)
+static void test_cli_parse_echo_cmd_w_missing_arg(void)
 {
     int argc = 3;
     const char *args[] = {
@@ -787,7 +1027,6 @@ static void test_cli_parse_full_echo_cmd_w_missing_arg(void)
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 0);
-    PT_ASSERT(copts.cmdind == 2);
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[2]);
     PT_ASSERT(copts.subcmd == CMD_ECHO);
@@ -818,11 +1057,14 @@ static void suite_cli_parse_echo(void)
 
     pt_add_test(test_cli_parse_full_echo_cmd_w_arg, "Test parsing OS echo CLI options full: mcumgr -v echo Hallo", sn);
     pt_add_test(test_cli_parse_full_echo_cmd_w_connstring, "Test parsing OS echo CLI options full: mcumgr -s... -v echo Hallo", sn);
-    pt_add_test(test_cli_parse_full_echo_cmd_help, "Test parsing OS echo common CLI options: help: mcumgr -v echo -h", sn);
+    pt_add_test(test_cli_parse_full_echo_cmd_w_connstring_long, "Test parsing OS echo CLI options full: mcumgr --connstring ... -v echo Hallo", sn);
+    pt_add_test(test_cli_parse_full_echo_cmd_w_connstring_long_alt, "Test parsing OS echo CLI options full: mcumgr --connstring=... -v echo Hallo", sn);
+    pt_add_test(test_cli_parse_echo_cmd_help, "Test parsing OS echo common CLI options: help: mcumgr -v echo -h", sn);
+    pt_add_test(test_cli_parse_echo_cmd_help_long, "Test parsing OS echo common CLI options: help: mcumgr -v echo --help", sn);
 
 
-    pt_add_test(test_cli_parse_full_echo_cmd_w_access_arg, "Test parsing OS echo common CLI options: Access arg: mcumgr -v echo Hallo access", sn);
-    pt_add_test(test_cli_parse_full_echo_cmd_w_missing_arg, "Test parsing OS echo common CLI options: Missing arg: mcumgr -v echo", sn);
+    pt_add_test(test_cli_parse_echo_cmd_w_access_arg, "Test parsing OS echo common CLI options: Access arg: mcumgr -v echo Hallo access", sn);
+    pt_add_test(test_cli_parse_echo_cmd_w_missing_arg, "Test parsing OS echo common CLI options: Missing arg: mcumgr -v echo", sn);
 
 
 }
@@ -852,7 +1094,6 @@ static void test_cli_parse_full_reset_cmd(void)
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 0);
-    PT_ASSERT(copts.cmdind == 2);
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[2]);
     PT_ASSERT(copts.subcmd == CMD_RESET);
@@ -891,7 +1132,6 @@ static void test_cli_parse_full_reset_cmd_w_connstring(void)
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 0);
     PT_ASSERT(copts.help == 0);
-    PT_ASSERT(copts.cmdind == 2);
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[2]);
     PT_ASSERT(copts.subcmd == CMD_RESET);
@@ -935,9 +1175,47 @@ static void test_cli_parse_full_reset_cmd_help(void)
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 1);
-    PT_ASSERT(copts.cmdind == 2);
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[2]);
+    PT_ASSERT(copts.subcmd == CMD_RESET);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("reset", copts.cmd);
+
+    /* everything consumed */
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+/**
+ * @brief Test reset cmd arg with --help arg
+ *
+ */
+static void test_cli_parse_full_reset_cmd_help_long(void)
+{
+    int argc = 3;
+    const char *args[] = {
+        "mcumgr",
+        "reset",
+        "--help",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 0);
+    PT_ASSERT(copts.help == 1);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[1]);
     PT_ASSERT(copts.subcmd == CMD_RESET);
     if (copts.cmd)
         PT_ASSERT_STR_EQ("reset", copts.cmd);
@@ -977,7 +1255,6 @@ static void test_cli_parse_full_reset_cmd_w_access_arg(void)
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 0);
-    PT_ASSERT(copts.cmdind == 2);
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[2]);
     PT_ASSERT(copts.subcmd == CMD_RESET);
@@ -1001,6 +1278,7 @@ static void suite_cli_parse_reset(void)
     pt_add_test(test_cli_parse_full_reset_cmd, "Test parsing OS reset CLI options: mcumgr -v reset", sn);
     pt_add_test(test_cli_parse_full_reset_cmd_w_connstring, "Test parsing OS reset CLI options: mcumgr -c... -v reset", sn);
     pt_add_test(test_cli_parse_full_reset_cmd_help, "Test parsing OS reset CLI options: help: mcumgr -v reset -h", sn);
+    pt_add_test(test_cli_parse_full_reset_cmd_help_long, "Test parsing OS reset CLI options: help: mcumgr reset --help", sn);
 
 
     pt_add_test(test_cli_parse_full_reset_cmd_w_access_arg, "Test parsing OS reset CLI options: Access arg: mcumgr -v reset access", sn);
@@ -1030,7 +1308,6 @@ static void test_cli_parse_analyze(void)
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 0);
     PT_ASSERT(copts.help == 0);
-    PT_ASSERT(copts.cmdind == 1);
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[1]);
     PT_ASSERT(copts.subcmd == CMD_IMAGE_INFO);
@@ -1055,10 +1332,51 @@ static void test_cli_parse_analyze(void)
     free(argv);
 }
 
+/**
+ * @brief Test analyze cmd arg with --help
+ *
+ */
+static void test_cli_parse_analyze_cmd_help_long(void)
+{
+    int argc = 3;
+    const char *args[] = {
+        "mcumgr",
+        "analyze",
+        "--help",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 0);
+    PT_ASSERT(copts.help == 1);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[1]);
+    PT_ASSERT(copts.subcmd == CMD_IMAGE_INFO);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("analyze", copts.cmd);
+
+    /* everything consumed */
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+
 static void suite_cli_parse_analyze(void)
 {
     const char *sn = "Suite CLI parsing analyze";
     pt_add_test(test_cli_parse_analyze, "Test parsing analyze CLI options: analyze some_file.bin", sn);
+    pt_add_test(test_cli_parse_analyze_cmd_help_long, "Test parsing analyze CLI options: analyze --help", sn);
 }
 
 
@@ -1087,7 +1405,6 @@ static void test_cli_parse_full_image_cmd(void)
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 0);
-    PT_ASSERT(copts.cmdind == 2);
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[2]);
     PT_ASSERT(copts.subcmd == CMD_IMAGE);
@@ -1128,9 +1445,47 @@ static void test_cli_parse_full_image_cmd_help(void)
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 1);
-    PT_ASSERT(copts.cmdind == 2);
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[2]);
+    PT_ASSERT(copts.subcmd == CMD_IMAGE);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("image", copts.cmd);
+
+    /* everything consumed */
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+/**
+ * @brief Test image cmd arg with --help
+ *
+ */
+static void test_cli_parse_full_image_cmd_help_long(void)
+{
+    int argc = 3;
+    const char *args[] = {
+        "mcumgr",
+        "image",
+        "--help",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 0);
+    PT_ASSERT(copts.help == 1);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[1]);
     PT_ASSERT(copts.subcmd == CMD_IMAGE);
     if (copts.cmd)
         PT_ASSERT_STR_EQ("image", copts.cmd);
@@ -1166,11 +1521,10 @@ static void test_cli_parse_full_image_cmd_w_access_arg(void)
 
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENOMSG); /* -ENOENT ? */
+    PT_ASSERT(rc == -ENOENT);
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 0);
-    PT_ASSERT(copts.cmdind == 2);
     PT_ASSERT(copts.cmd != NULL);
     PT_ASSERT(copts.cmd == argv[2]);
     PT_ASSERT(copts.subcmd == CMD_IMAGE);
@@ -1193,8 +1547,273 @@ static void suite_cli_parse_image(void)
 
     pt_add_test(test_cli_parse_full_image_cmd, "Test parsing OS image CLI options: mcumgr -v image", sn);
     pt_add_test(test_cli_parse_full_image_cmd_help, "Test parsing OS image CLI options: help: mcumgr -v image -h", sn);
+    pt_add_test(test_cli_parse_full_image_cmd_help_long, "Test parsing OS image CLI options: help: mcumgr image --help", sn);
 
     pt_add_test(test_cli_parse_full_image_cmd_w_access_arg, "Test parsing OS image CLI options: Access arg: mcumgr -v image access", sn);
+}
+
+
+
+/**
+ * @brief Test image list cmd arg with arg
+ *
+ */
+static void test_cli_parse_image_list_cmd(void)
+{
+    int argc = 3;
+    const char *args[] = {
+        "mcumgr",
+        "image",
+        "list"
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 0);
+    PT_ASSERT(copts.help == 0);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[2]);
+    PT_ASSERT(copts.subcmd == CMD_IMAGE_LIST);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("list", copts.cmd);
+
+    /* everything consumed */
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+/**
+ * @brief Test image list cmd arg with -h arg
+ *
+ */
+static void test_cli_parse_image_list_cmd_help(void)
+{
+    int argc = 4;
+    const char *args[] = {
+        "mcumgr",
+        "image",
+        "list",
+        "-h",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 0);
+    PT_ASSERT(copts.help == 1);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[2]);
+    PT_ASSERT(copts.subcmd == CMD_IMAGE_LIST);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("list", copts.cmd);
+
+    /* everything consumed */
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+/**
+ * @brief Test image list cmd arg with --help
+ *
+ */
+static void test_cli_parse_image_list_cmd_help_long(void)
+{
+    int argc = 4;
+    const char *args[] = {
+        "mcumgr",
+        "image",
+        "list",
+        "--help",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 0);
+    PT_ASSERT(copts.help == 1);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[2]);
+    PT_ASSERT(copts.subcmd == CMD_IMAGE_LIST);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("list", copts.cmd);
+
+    /* everything consumed */
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+static void suite_cli_parse_image_list(void)
+{
+    const char *sn = "Suite CLI parsing image list";
+
+    pt_add_test(test_cli_parse_image_list_cmd, "Test parsing OS image list CLI options: mcumgr image list", sn);
+    pt_add_test(test_cli_parse_image_list_cmd_help, "Test parsing OS image list CLI options: help: mcumgr image list -h", sn);
+    pt_add_test(test_cli_parse_image_list_cmd_help_long, "Test parsing OS image list CLI options: help: mcumgr image list --help", sn);
+}
+
+static const uint8_t hash[32] = "\xac\x35\x2c\x1f\x56\xad\xcb\x10\x29\x2d\xa6\xe1\xbe\x6d\x86\x72"
+                                "\xac\xaa\x7b\x34\x32\x3a\x33\xb3\x5b\xdb\xa9\xaa\x25\x83\xc6\xe0";
+
+/**
+ * @brief Test image cmd arg with arg
+ *
+ */
+static void test_cli_parse_image_test_cmd(void)
+{
+    int argc = 4;
+    const char *args[] = {
+        "mcumgr",
+        "image",
+        "test",
+        "ac352c1f56adcb10292da6e1be6d8672"
+        "acaa7b34323a33b35bdba9aa2583c6e0",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 0);
+    PT_ASSERT(copts.help == 0);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[2]);
+    PT_ASSERT(copts.subcmd == CMD_IMAGE_TEST);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("test", copts.cmd);
+
+    /* everything consumed */
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+    PT_ASSERT_MEM_EQ(copts.cmdopts.img_test.fw_sha, hash, sizeof(hash));
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+/**
+ * @brief Test image test cmd arg with -h arg
+ *
+ */
+static void test_cli_parse_image_test_cmd_help(void)
+{
+    int argc = 4;
+    const char *args[] = {
+        "mcumgr",
+        "image",
+        "test",
+        "-h",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 0);
+    PT_ASSERT(copts.help == 1);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[2]);
+    PT_ASSERT(copts.subcmd == CMD_IMAGE_TEST);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("test", copts.cmd);
+
+    /* everything consumed */
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+/**
+ * @brief Test image test cmd arg with --help
+ *
+ */
+static void test_cli_parse_image_test_cmd_help_long(void)
+{
+    int argc = 4;
+    const char *args[] = {
+        "mcumgr",
+        "image",
+        "test",
+        "--help",
+    };
+    char **argv = build_options(argc, args);
+
+    struct cli_options copts = {0};
+
+    optind = 0;
+
+    int rc = parse_cli_options(argc, argv, &copts);
+
+    PT_ASSERT(rc == 0);
+    PT_ASSERT(copts.version == 0);
+    PT_ASSERT(copts.verbose == 0);
+    PT_ASSERT(copts.help == 1);
+    PT_ASSERT(copts.cmd != NULL);
+    PT_ASSERT(copts.cmd == argv[2]);
+    PT_ASSERT(copts.subcmd == CMD_IMAGE_TEST);
+    if (copts.cmd)
+        PT_ASSERT_STR_EQ("test", copts.cmd);
+
+    /* everything consumed */
+    PT_ASSERT(copts.argc == 0);
+    PT_ASSERT(copts.argv == NULL);
+
+    check_shuffle(argc, argv, args);
+
+    free(argv);
+}
+
+static void suite_cli_parse_image_test(void)
+{
+    const char *sn = "Suite CLI parsing image test";
+
+    pt_add_test(test_cli_parse_image_test_cmd, "Test parsing OS image test CLI options: mcumgr image test", sn);
+    pt_add_test(test_cli_parse_image_test_cmd_help, "Test parsing OS image test CLI options: help: mcumgr image test -h", sn);
+    pt_add_test(test_cli_parse_image_test_cmd_help_long, "Test parsing OS image test CLI options: help: mcumgr image test --help", sn);
 }
 
 
@@ -1208,6 +1827,8 @@ int main(int argc, char** argv)
     pt_add_suite(suite_cli_parse_echo);
     pt_add_suite(suite_cli_parse_reset);
     pt_add_suite(suite_cli_parse_image);
+    pt_add_suite(suite_cli_parse_image_list);
+    pt_add_suite(suite_cli_parse_image_test);
     pt_add_suite(suite_cli_parse_analyze);
 
     return pt_run();
