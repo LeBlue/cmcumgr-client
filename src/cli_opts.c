@@ -23,7 +23,7 @@ static const char *version = VERSION;
 static const char *version = "0.0.0";
 #endif
 
-void reset_getopt(void)
+static void reset_getopt(void)
 {
 #ifdef __GLIBC__
     optind = 0;
@@ -120,7 +120,7 @@ struct subcmd {
 #define CMD_DEF_END {0}
 
 
-const struct longopt *find_long_opt(const struct longopt *lopts, const char *loptstr)
+static const struct longopt *find_long_opt(const struct longopt *lopts, const char *loptstr)
 {
     if (!loptstr) {
         return NULL;
@@ -286,18 +286,18 @@ static int parse_commmon_positional_args(struct cli_options *copts, int nargs)
 }
 
 
-int parse_echo_opts(struct cli_options *copts)
+static int parse_echo_opts(struct cli_options *copts)
 {
     return parse_commmon_positional_args(copts, 1);
 }
 
-int parse_analyze_opts(struct cli_options *copts)
+static int parse_analyze_opts(struct cli_options *copts)
 {
     return parse_commmon_positional_args(copts, 1);
 }
 
 
-int parse_common_options_no_args(struct cli_options *copts)
+static int parse_common_options_no_args(struct cli_options *copts)
 {
     int ret;
 
@@ -358,7 +358,7 @@ static const struct subcmd imgcmds[] = {
     CMD_DEF_END
 };
 
-int parse_subcommand_options(const struct subcmd *subs, struct cli_options *copts)
+static int parse_subcommand_options(const struct subcmd *subs, struct cli_options *copts)
 {
     for (const struct subcmd *sc = subs; sc->name; ++sc) {
         if (!strcmp(copts->argv[0], sc->name)) {
@@ -374,7 +374,7 @@ int parse_subcommand_options(const struct subcmd *subs, struct cli_options *copt
     return UNRECOGNIZED_OPTION;
 }
 
-int parse_image_opts(struct cli_options *copts)
+static int parse_image_opts(struct cli_options *copts)
 {
     int ret;
 
@@ -418,7 +418,7 @@ static struct longopt cli_longopts[] = {
     OPT_DEF_END
 };
 
-int parse_mcumgr_options(struct cli_options *copts)
+static int parse_mcumgr_options(struct cli_options *copts)
 {
     int argc = copts->argc;
     char *const *argv = copts->argv;
