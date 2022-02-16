@@ -33,38 +33,6 @@ void reset_getopt(void)
 }
 
 
-int usage_common(const char *prgname)
-{
-    fprintf(stderr, "%s %s\n", prgname, version);
-    fprintf(stderr, "Usage: %s [options] <cmd> [cmd_options] [cmd_args]\n", prgname);
-    return 0;
-}
-
-int usage_reset(const char *prgname)
-{
-    fprintf(stderr, "Usage: %s [options] reset\n", prgname);
-    return 0;
-}
-
-
-int print_common_options(const struct cli_options *copts)
-{
-    fprintf(stderr, "verbose: %d\n", copts->verbose);
-    fprintf(stderr, "help: %d\n", copts->help);
-    fprintf(stderr, "version: %d\n", copts->version);
-    fprintf(stderr, "conntype: %s", copts->conntype ? copts->conntype : "");
-    fprintf(stderr, "connstring: %s", copts->connstring ? copts->connstring : "");
-    return 0;
-}
-
-void print_usage_err(const struct cli_options *copts)
-{
-    if (copts->optopt) {
-        fprintf(stderr, "Unrecognized option: %c\n", copts->optopt);
-    }
-}
-
-
 #define UNRECOGNIZED_OPTION -ENOENT
 #define MISSING_ARGUMENT -ENODATA
 #define MISSING_COMMAND -ENOMSG
@@ -109,21 +77,48 @@ static int get_int_optarg(const char *arg, int *num)
     return INVALID_ARGUMENT;
 }
 
+struct longopt {
+    const char *name;
+    const char *description;
+    int opt;
+    int arg_num;
+};
+
+#define OPT_DEF(_name, _opt, _nargs, _description) \
+    { .name = _name, .opt = _opt, .arg_num = _nargs, .description = _description }
+
+#define OPT_DEF_END {0}
+
+
 struct subcmd {
     enum subcommand cmd;
     const char *name;
     int (*optparser)(struct cli_options *);
+    const char *description;
+    const struct subcmd *subcmds;
+    const struct longopt* lopts;
+    const char *args_usage;
 };
 
-#define SUB_CMD(_name, _subcmd, _parse_fn) \
-    { .cmd = _subcmd, .name = _name, .optparser = _parse_fn }
+
+#define CMD_DEF_FULL(_name, _subcmd, _parse_fn, _lopts, _description, _subcmds, _args_usage) \
+    { .cmd = _subcmd, .name = _name, .optparser = _parse_fn, .description = _description, .lopts = _lopts, .subcmds = _subcmds, .args_usage = _args_usage }
+
+#define CMD_DEF_SUB(_name, _subcmd, _parse_fn, _lopts, _description, _subcmds) \
+    CMD_DEF_FULL(_name, _subcmd, _parse_fn, _lopts, _description, _subcmds, NULL)
+
+#define CMD_DEF(_name, _subcmd, _parse_fn, _description) \
+    CMD_DEF_FULL(_name, _subcmd, _parse_fn, NULL, _description, NULL, NULL)
+
+#define CMD_DEF_ARGS(_name, _subcmd, _parse_fn, _description, _args_usage) \
+    CMD_DEF_FULL(_name, _subcmd, _parse_fn, NULL, _description, NULL, _args_usage)
+
+#define CMD_DEF_OPTS(_name, _subcmd, _parse_fn, _lopts, _description) \
+    CMD_DEF_FULL(_name, _subcmd, _parse_fn, _lopts, _description, NULL, NULL)
 
 
-struct longopt {
-    const char *name;
-    int opt;
-    int arg_num;
-};
+#define CMD_DEF_END {0}
+
 
 const struct longopt *find_long_opt(const struct longopt *lopts, const char *loptstr)
 {
@@ -187,8 +182,8 @@ int assign_common_opts(struct cli_options *copts, int optc)
 #define COMMON_OPTS "h-:"
 
 static struct longopt common_longopts[] = {
-    {.name = "help", .opt = 'h'},
-    { 0 },
+    OPT_DEF("help", 'h', 0, "Print this help and exit"),
+    OPT_DEF_END
 };
 
 /**
@@ -354,13 +349,13 @@ static int parse_image_upload_opts(struct cli_options *copts)
 
 
 static const struct subcmd imgcmds[] = {
-    SUB_CMD("list", CMD_IMAGE_LIST, parse_common_options_no_args),
-    SUB_CMD("analyze", CMD_IMAGE_INFO, parse_analyze_opts),
-    SUB_CMD("test", CMD_IMAGE_TEST, parse_image_test_opts),
-    SUB_CMD("upload", CMD_IMAGE_UPLOAD, parse_image_upload_opts),
-    SUB_CMD("erase", CMD_IMAGE_ERASE, parse_common_options_no_args),
-    SUB_CMD("confirm", CMD_IMAGE_CONFIRM, parse_common_options_no_args),
-    { 0 }
+    CMD_DEF_ARGS("analyze", CMD_IMAGE_INFO, parse_analyze_opts, "Verify and print information of a firmware image file", "FILE"),
+    CMD_DEF("list", CMD_IMAGE_LIST, parse_common_options_no_args, "List firmware images on a device"),
+    CMD_DEF_ARGS("upload", CMD_IMAGE_UPLOAD, parse_image_upload_opts, "Upload a firmware file", "FILE"),
+    CMD_DEF_ARGS("test", CMD_IMAGE_TEST, parse_image_test_opts, "Mark an image to be tested on the next boot", "HASH"),
+    CMD_DEF("confirm", CMD_IMAGE_CONFIRM, parse_common_options_no_args, "Confirm a booted slot"),
+    CMD_DEF("erase", CMD_IMAGE_ERASE, parse_common_options_no_args, "Erase a slot"),
+    CMD_DEF_END
 };
 
 int parse_subcommand_options(const struct subcmd *subs, struct cli_options *copts)
@@ -404,57 +399,30 @@ int parse_image_opts(struct cli_options *copts)
 
 
 static const struct subcmd subcmds[] = {
-    SUB_CMD("image", CMD_IMAGE, parse_image_opts),
-    SUB_CMD("echo", CMD_ECHO, parse_echo_opts),
-    SUB_CMD("reset", CMD_RESET, parse_common_options_no_args),
-    SUB_CMD("analyze", CMD_IMAGE_INFO, parse_analyze_opts),
-    { 0 }
+    CMD_DEF_SUB("image", CMD_IMAGE, parse_image_opts, NULL, "Manage firmware on a device", imgcmds),
+    CMD_DEF("echo", CMD_ECHO, parse_echo_opts, "Send a text string to a device and print the response"),
+    CMD_DEF("reset", CMD_RESET, parse_common_options_no_args, "Reset a device"),
+    CMD_DEF("analyze", CMD_IMAGE_INFO, parse_analyze_opts, "Verify and print information of a firmware image file"),
+    CMD_DEF_END
 };
 
 
 static struct longopt cli_longopts[] = {
-    { .name = "help", .opt = 'h'},
-    { .name = "version", .opt = 'V'},
-    { .name = "verbose", .opt = 'v'},
-    { .name = "conntype", .opt = 1, .arg_num = 1},
-    { .name = "connstring", .opt = 's', .arg_num = 1},
-    { .name = "timeout", .opt = 't', .arg_num = 1},
-    { .name = "retries", .opt = 'r', .arg_num = 1},
-    { 0 },
+    OPT_DEF("help", 'h', 0, "Print this help and exit"),
+    OPT_DEF("version", 'V', 0, "Print version and exit"),
+    OPT_DEF("verbose", 'v', 0, "Increase verbosity, can be given multiple times"),
+    OPT_DEF("conntype", 1, 1, "Connection type string"),
+    OPT_DEF("connstring", 's', 1, "Connection options, comma separated of 'key=value' or 'flag'"),
+    OPT_DEF("timeout", 't', 1, "Connection timeout"),
+    OPT_DEF("retries", 'r', 1, "Command reties"),
+    OPT_DEF_END
 };
 
-
-/**
- * @brief parse cli options
- *
- * @param argc  Argument count
- * @param argv  Arguments
- * @param copts Where to store parsed options
- *
- * @retval       0  parsing success
- * @retval -EINVAL  invalid argument provided (API usage error)
- * @retval -ENOENT  unrecognized option or (sub)command
- * @retval -ENODATA missing option argument.
- * @retval -E2BIG   access argument
- * @retval -ENOMSG  missing required argument
- *
- */
-int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
+int parse_mcumgr_options(struct cli_options *copts)
 {
+    int argc = copts->argc;
+    char *const *argv = copts->argv;
     int opt;
-
-    if (argc < 1 || !argv || !copts) {
-        return -EINVAL;
-    }
-
-    /* defaults */
-    memset(copts, 0, sizeof(*copts));
-    copts->conntype = "serial";
-    copts->argc = argc;
-    copts->argv = argv;
-    opterr = 0;
-    copts->prgname = argv[0];
-    copts->timeout = 3;
 
     reset_getopt();
 
@@ -502,6 +470,18 @@ int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
                 copts->timeout = to;
                 break;
             }
+            case 'r':
+            {
+                int ret, rt;
+                ret = get_int_optarg(arg, &rt);
+                if (ret) {
+                    copts->argc = argc - (optind - 1);
+                    copts->argv += (optind - 1);
+                    return ret;
+                }
+                copts->retries = rt;
+                break;
+            }
             case 'v':
                 ++copts->verbose;
                 break;
@@ -536,4 +516,169 @@ int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
     }
 
     return parse_subcommand_options(subcmds, copts);
+}
+
+
+/**
+ * @brief parse cli options
+ *
+ * @param argc  Argument count
+ * @param argv  Arguments
+ * @param copts Where to store parsed options
+ *
+ * @retval       0  parsing success
+ * @retval -EINVAL  invalid argument provided (API usage error)
+ * @retval -ENOENT  unrecognized option or (sub)command
+ * @retval -ENODATA missing option argument.
+ * @retval -E2BIG   access argument
+ * @retval -ENOMSG  missing required argument
+ *
+ */
+int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
+{
+    if (argc < 1 || !argv || !copts) {
+        return -EINVAL;
+    }
+
+    /* defaults */
+    memset(copts, 0, sizeof(*copts));
+    copts->conntype = "serial";
+    copts->argc = argc;
+    copts->argv = argv;
+    opterr = 0;
+    copts->prgname = argv[0];
+    copts->timeout = 3;
+
+    return parse_mcumgr_options(copts);
+}
+
+static const struct subcmd mcumgr[] = {
+    CMD_DEF_SUB("mcumgr", CMD_NONE, parse_mcumgr_options, cli_longopts, "Manage devices", subcmds),
+    CMD_DEF_END
+};
+
+static const int print_padlen = 20;
+
+static void print_subcommands(const struct subcmd *subs)
+{
+    const int padlen = print_padlen;
+    if (!subs) {
+        return;
+    }
+    for (const struct subcmd *sc = subs; sc->name; ++sc) {
+        int len = strlen(sc->name);
+        if (len >= padlen) len = 0; else len = padlen - len;
+        fprintf(stderr, "   %s  %*s%s\n", sc->name, len, "", sc->description);
+    }
+}
+
+static void print_options(const struct longopt *lopts)
+{
+    if (!lopts) {
+        return;
+    }
+
+    for (const struct longopt *lo = lopts; lo->name; ++lo) {
+        char opt = 0;
+        const char *description = lo->description ? lo->description : "";
+        int padlen = print_padlen - sizeof("-X, --") + 1;
+
+        if (lo->opt >= '0' && lo->opt <= 'z') {
+            opt = (char) lo->opt;
+        }
+        if (lo->name) {
+            int len = strlen(lo->name);
+            if (len >= padlen) padlen = 0; else padlen = padlen - len;
+        }
+        if (opt && lo->name) {
+            fprintf(stderr, "   -%c, --%s  %*s%s\n", opt, lo->name, padlen, "", description);
+        } else if (opt) {
+            fprintf(stderr,  "   -%c       %*s%s\n", opt, padlen, "", description);
+        } else if (lo->name) {
+            fprintf(stderr,  "       --%s  %*s%s\n", lo->name, padlen, "", description);
+        }
+    }
+}
+
+static void print_usage_subcommand(const char* prgname, const struct subcmd *sc)
+{
+    const char *optstr = "options";
+
+    fprintf(stderr, "Usage: %s [%s] ", prgname, optstr);
+
+    if (sc->cmd != CMD_NONE) {
+        /* TODO: better, fixme: sub command of subcommand (e.g. image list, not correct) */
+        if (sc->subcmds) {
+            if (sc->lopts) {
+                fprintf(stderr, "%s [%s_%s] <cmd> ...\n", sc->name, sc->name, optstr);
+            } else {
+                fprintf(stderr, "%s <cmd> ...\n", sc->name);
+            }
+        } else if (sc->lopts) {
+            if (sc->args_usage) {
+                fprintf(stderr, "%s [%s_%s] %s\n", sc->name, sc->name, optstr, sc->args_usage);
+            } else {
+                fprintf(stderr, "%s [%s_%s]\n", sc->name, sc->name, optstr);
+            }
+        } else {
+            if (sc->args_usage) {
+                fprintf(stderr, "%s [%s_%s] %s\n", sc->name, sc->name, optstr, sc->args_usage);
+            } else {
+                fprintf(stderr, "%s\n", sc->name);
+            }
+        }
+    } else {
+        fprintf(stderr, "<cmd> ...\n");
+    }
+
+    fprintf(stderr, "%s\n", sc->description);
+
+    if (sc->subcmds) {
+        fprintf(stderr, "\nAvaliable subcommands:\n");
+        print_subcommands(sc->subcmds);
+    }
+    fprintf(stderr, "\nOptions:\n");
+    if (sc->lopts) {
+        print_options(sc->lopts);
+    } else {
+        print_options(common_longopts);
+    }
+    if (sc->subcmds) {
+        fprintf(stderr, "\nRun %s %s -h for detailed command description\n", prgname, sc->name);
+    }
+}
+
+
+static void _usage_subcommand(const char *prgname, enum subcommand subcmd, const struct subcmd *subcmd_list)
+{
+    for (const struct subcmd *sc = subcmd_list; sc->name; ++sc) {
+        if (sc->cmd == subcmd) {
+            print_usage_subcommand(prgname, sc);
+        } else if (sc->subcmds) {
+            _usage_subcommand(prgname, subcmd, sc->subcmds);
+        }
+    }
+}
+
+
+void usage_subcommand(const char *prgname, enum subcommand subcmd)
+{
+    _usage_subcommand(prgname, subcmd, mcumgr);
+}
+
+void usage_mcumgr(const char *prgname)
+{
+    fprintf(stderr, "%s %s\n", mcumgr->name, version);
+    usage_subcommand(prgname, CMD_NONE);
+}
+
+
+int print_common_options(const struct cli_options *copts)
+{
+    fprintf(stderr, "verbose: %d\n", copts->verbose);
+    fprintf(stderr, "help: %d\n", copts->help);
+    fprintf(stderr, "version: %d\n", copts->version);
+    fprintf(stderr, "conntype: %s", copts->conntype ? copts->conntype : "");
+    fprintf(stderr, "connstring: %s", copts->connstring ? copts->connstring : "");
+    return 0;
 }

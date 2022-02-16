@@ -39,7 +39,10 @@ void print_usage_or_error(struct cli_options *copts, int rc)
                 printf("%s\n", VERSION);
                 exit(0);
             } else if (copts->help) {
-                usage_common(copts->prgname);
+                if (copts->subcmd == CMD_NONE)
+                    usage_mcumgr(copts->prgname);
+                else
+                    usage_subcommand(copts->prgname, copts->subcmd);
                 exit(0);
             }
             break;
@@ -97,7 +100,11 @@ void print_usage_or_error(struct cli_options *copts, int rc)
             }
             exit(1);
         case -EBADMSG:
-            fprintf(stderr, "Invalid format for argument '%s'\n", copts->argv[0]);
+            if (copts->argv) {
+                fprintf(stderr, "Invalid format for argument '%s'\n", copts->argv[0]);
+            } else {
+                fprintf(stderr, "Invalid format for argument\n");
+            }
             exit(1);
         default:
             fprintf(stderr, "Options parsing failed: %s\n", strerror(-rc));

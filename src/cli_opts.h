@@ -47,6 +47,7 @@ struct cli_options {
     int verbose;
     char optopt;
     int timeout;
+    int retries;
 
     /* command string  */
     const char *cmd;
@@ -72,8 +73,9 @@ struct cli_options {
 int parse_cli_options(int argc, char *const *argv, struct cli_options *copts);
 
 
-int usage_common(const char *prgname);
-int usage_reset(const char *prgname);
-int usage_echo(const char *prgname);
+void usage_mcumgr(const char *prgname);
+
+void usage_subcommand(const char *prg_name, enum subcommand subcmd);
+
 
 #endif
