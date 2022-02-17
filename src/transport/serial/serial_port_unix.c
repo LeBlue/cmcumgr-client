@@ -24,8 +24,8 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <arpa/inet.h>
 #include <errno.h>
+#include <poll.h>
 
 #include "serial_port.h"
 #include "utils.h"
@@ -172,11 +172,30 @@ int port_read_poll(int fd, char *buf, size_t maxlen, int end_time, int verbose)
     int rc = 0;
 
     while (!rc) {
+        struct pollfd p;
+        int n;
+
         now = time_get();
         if (now > end_time) {
             fprintf(stderr, "Read timed out\n");
             return -ETIMEDOUT;
         }
+
+        p.fd = fd;
+        p.events = POLLIN;
+        while (!rc && (n = poll(&p, 1, (end_time - now))) < 0) {
+            if (!n) {
+                rc = -ETIMEDOUT;
+            } else if (errno == EAGAIN || errno == EINTR) {
+                now = time_get();
+                if (now > end_time) {
+                    rc = -ETIMEDOUT;
+                }
+            } else {
+                rc = -errno;
+            }
+        }
+
         rc = read(fd, buf, maxlen);
         if (rc < 0 && (errno == EAGAIN || ((EAGAIN != EWOULDBLOCK) && errno == EWOULDBLOCK))) {
             rc = 0;
