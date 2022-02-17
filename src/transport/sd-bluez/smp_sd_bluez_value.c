@@ -41,7 +41,6 @@
 // static const char BLUEZ[] = "org.bluez";
 #define BLUEZ "org.bluez"
 static const char IF_ADAPTER[] = "org.bluez.Adapter1";
-// static const char IF_DEVICE[] = "org.bluez.Device1";
 #define IF_DEVICE "org.bluez.Device1"
 static const char IF_CHAR[] = "org.bluez.GattCharacteristic1";
 static const char IF_PROPERTIES[] = "org.freedesktop.DBus.Properties";
