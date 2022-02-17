@@ -79,7 +79,9 @@ int serial_transport_connect(struct smp_transport *transport)
         fprintf(stderr, "Failed to setup port %s %d\n", sopts->port_name, sopts->speed);
     }
 
-    fprintf(stderr, "Using transport opts: %s %d\n", sopts->port_name, sopts->speed);
+    if (transport->verbose) {
+        fprintf(stderr, "Using transport opts: %s %d\n", sopts->port_name, sopts->speed);
+    }
 
     flush_dev_console(hd->port);
 
