@@ -20,10 +20,16 @@ struct smp_sd_bluez_handle {
     char dev_path[40];
     int mtu;
     sd_bus *bus;
-    sd_bus_slot *slot; /* notify handle */
     uint8_t readbuf[512];
     size_t readoff;
     int read_rc;
+
+    /* for char value based implementation */
+    sd_bus_slot *slot; /* notify handle */
+
+    /* fd based implementation */
+    int wfd; /* write fd */
+    int nfd; /* notify fd */
 };
 
 int sd_bluez_transport_init(struct smp_transport *transport, struct smp_sd_bluez_handle *hd, struct sd_bluez_opts *sopts);
