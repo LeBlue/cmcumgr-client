@@ -117,13 +117,24 @@ src_mcumgr = [
     'src/commands/cmd_common.c',
     'src/commands/cmd_os.c',
     'src/commands/cmd_img.c',
-    'src/transport/serial/smp_serial.c',
 ]
+
+mcumgr_deps = []
+if get_option('enable-serial')
+    src_mcumgr += 'src/transport/serial/smp_serial.c'
+endif
+if get_option('enable-ble')
+    src_mcumgr += 'src/transport/sd-bluez/smp_sd_bluez.c'
+    sdbus = dependency('systemd', version: '>=240', required: true)
+    mcumgr_deps += sdbus
+endif
+
+message(sdbus.get_variable('prefix'))
 
 libmcumgr = static_library(
     'mcumgr-client',
     sources: src_mcumgr,
-    dependencies: [ utils_dep, cbor_dep ],
+    dependencies: [ utils_dep, cbor_dep, mcumgr_deps ],
     include_directories: [
         'src/lib/include',
         'src/include',
@@ -138,6 +149,7 @@ libmcumgr = static_library(
 mcumgr_dep = declare_dependency(
     link_with: libmcumgr,
     include_directories: ['src', 'src/include', 'src/mcumgr', 'src/transport', 'src/commands'],
+    dependencies: [ mcumgr_deps, sdbus ]
 )
 
 
@@ -150,16 +162,18 @@ src_cli = [
     'src/file_reader_unix.c',
     'src/transport/serial/serial_opts.c',
     'src/transport/serial/serial_port_unix.c',
+    'src/transport/sd-bluez/sd_bluez_opts.c',
 
 ]
 
 mcumgr = executable('mcumgr',
     sources: src_cli,
     include_directories : [],
-    dependencies: [ mcumgr_dep, utils_dep ],
+    dependencies: [ mcumgr_dep, utils_dep, sdbus],
     install : true,
     install_dir : bindir,
     c_args: common_cc_flags,
+    link_args: '-lsystemd', # why U not work with dependencies?
 )
 
 

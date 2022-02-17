@@ -1,1 +1,4 @@
 option('enable-tests', type: 'boolean', value: false, description: 'Enable building test programs')
+option('enable-serial', type: 'boolean', value: true, description: 'Enable serial transport')
+option('enable-ble', type: 'boolean', value: true, description: 'Enable ble transport')
+# option('ble-backend', type: 'choice', value: 'auto', choices: ['auto', 'sd-bluez'], description: 'ble transport backend implementation')
