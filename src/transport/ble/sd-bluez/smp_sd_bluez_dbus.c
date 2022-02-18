@@ -27,45 +27,25 @@
 
 #include "smp_transport.h"
 #include "smp_sd_bluez.h"
-
-#define PRDBG 1
-#if PRDBG
-#include <stdio.h>
-#define DBG(fmt, args...) do { fprintf(stderr, "dbg: smp_sd_bluez: " fmt, ##args); } while (0)
-#else
-#define DBG(fmt, args...) do {} while (0)
-#endif
-
-#define SMP_BLUETOOTH_UUID "da2e7828-fbce-4e01-ae9e-261174997c48"
-
-// static const char BLUEZ[] = "org.bluez";
-#define BLUEZ "org.bluez"
-static const char IF_ADAPTER[] = "org.bluez.Adapter1";
-#define IF_DEVICE "org.bluez.Device1"
-static const char IF_CHAR[] = "org.bluez.GattCharacteristic1";
-static const char IF_PROPERTIES[] = "org.freedesktop.DBus.Properties";
+#include "sd_bluez.h"
 
 #include <assert.h>
 
-static inline struct smp_sd_bluez_handle *get_handle(struct smp_transport *transport)
-{
-    struct smp_sd_bluez_handle *hd = (struct smp_sd_bluez_handle *) transport->hd;
-    return hd;
-}
 
 static int start_notify(struct smp_sd_bluez_handle *hd, const char *path)
 {
     int rc;
     sd_bus_message *msg = NULL;
-    sd_bus_error err = SD_BUS_ERROR_NULL;
+    sd_bus_error sderr = SD_BUS_ERROR_NULL;
+
     DBG("Call: %s %s %s %s\n", BLUEZ, path, IF_CHAR, "StartNotify");
-    rc = sd_bus_call_method(hd->bus, BLUEZ, path, IF_CHAR, "StartNotify", &err, &msg, "");
+    rc = sd_bus_call_method(hd->bus, BLUEZ, path, IF_CHAR, "StartNotify", &sderr, &msg, "");
 
     if (rc < 0) {
         if (rc == -EINVAL) {
             assert(rc != -EINVAL);
-        } else if (err.message) {
-            fprintf(stderr, "Failed to enable notification: %s\n", err.message);
+        } else if (sderr.message) {
+            fprintf(stderr, "Failed to enable notification: %s\n", sderr.message);
         }
         sd_bus_message_unref(msg);
     } else {
@@ -74,111 +54,11 @@ static int start_notify(struct smp_sd_bluez_handle *hd, const char *path)
     return rc;
 }
 
-// static int message_read_byte_array(sd_bus_message *msg, uint8_t *buf, size_t sz)
-// {
-//     int rc;
-//     size_t off;
-
-//     /* iterate through value bytes array */
-//     rc = sd_bus_message_enter_container(msg, 'a', "y");
-//     if (rc < 0) {
-//         return rc;
-//     }
-
-//     for (off = 0; off < sz; off++) {
-//         const uint8_t byte;
-
-//         rc = sd_bus_message_read(msg, "y", &byte);
-//         if (rc < 0) {
-//             DBG("Read: 's' failed: %d\n", rc);
-//             return rc;
-//         }
-//         if (rc == 0) {
-//             DBG("Read: 'a' finished\n");
-//             break;
-//         }
-//         buf[off] = byte;
-//     }
-//     /* no buf space, skip over, TODO: return err? */
-//     if (rc > 0) {
-//         while (sd_bus_message_skip(msg, "y") == 0) {
-//         }
-//     }
-
-//     rc = sd_bus_message_exit_container(msg);
-
-//     return off;
-// }
-
-// static int copy_property_value_msg(struct smp_sd_bluez_handle *hd, sd_bus_message *msg)
-// {
-//     int rc;
-//     char *signature = NULL;
-
-//     /* enter variant as real type ay */
-//     rc = sd_bus_message_read(msg, "v", "g", &signature);
-//     if (rc < 0) {
-//         DBG("Failed read 'Value' container variant: %d\n", rc);
-//         hd->read_rc = rc;
-//         return 0;
-//     }
-//     DBG("Signature: '%s'\n", signature);
-//     free(signature);
-
-//     if ((sizeof(hd->readbuf) - hd->readoff) > 0) {
-//         // TODO: convert to use sd_bus_message_read_array()
-//         rc =  message_read_byte_array(msg, hd->readbuf + hd->readoff, sizeof(hd->readbuf) - hd->readoff);
-//         if (rc > 0) {
-//             hd->readoff += rc;
-//             rc = 0;
-//         }
-//     } else {
-//         fprintf(stderr, "Notify: no buf space\n");
-//         hd->read_rc = -ENOBUFS;
-//     }
-//     return rc;
-// }
-
-// static int message_read_byte_array(sd_bus_message *msg, uint8_t *buf, size_t sz)
-// {
-//     int rc;
-//     size_t off;
-
-//     /* iterate through value bytes array */
-//     rc = sd_bus_message_enter_container(msg, 'a', "y");
-//     if (rc < 0) {
-//         return rc;
-//     }
-
-//     for (off = 0; off < sz; off++) {
-//         const uint8_t byte;
-
-//         rc = sd_bus_message_read(msg, "y", &byte);
-//         if (rc < 0) {
-//             DBG("Read: 's' failed: %d\n", rc);
-//             return rc;
-//         }
-//         if (rc == 0) {
-//             DBG("Read: 'a' finished\n");
-//             break;
-//         }
-//         buf[off] = byte;
-//     }
-//     /* no buf space, skip over, TODO: return err? */
-//     if (rc > 0) {
-//         while (sd_bus_message_skip(msg, "y") == 0) {
-//         }
-//     }
-
-//     rc = sd_bus_message_exit_container(msg);
-
-//     return off;
-// }
-
 static int copy_property_value_msg(struct smp_sd_bluez_handle *hd, sd_bus_message *msg)
 {
     int rc;
-    char *signature = NULL;
+    size_t len = 0;
+    const uint8_t *buf = NULL;
 
     /* enter variant as real type ay */
     rc = sd_bus_message_enter_container(msg, SD_BUS_TYPE_VARIANT, "ay");
@@ -186,10 +66,8 @@ static int copy_property_value_msg(struct smp_sd_bluez_handle *hd, sd_bus_messag
         DBG("Enter variant failed\n");
         return -EBADMSG;
     }
+
     /* read array */
-    size_t len = 0;
-    const uint8_t *buf = NULL;
-    // const void *bufp = (void*) buf;
     rc = sd_bus_message_read_array(msg, 'y', (const void**)&buf, &len);
     if (rc < 0) {
         return -EBADMSG;
@@ -208,15 +86,17 @@ static int copy_property_value_msg(struct smp_sd_bluez_handle *hd, sd_bus_messag
 
 static int notify_cb(sd_bus_message *msg, void *userdata, sd_bus_error *ret_error)
 {
-    struct smp_sd_bluez_handle *hd = (struct smp_sd_bluez_handle *) userdata;
     (void)ret_error;
-
-    DBG("Notify CB\n");
+    struct smp_sd_bluez_handle *hd = (struct smp_sd_bluez_handle *) userdata;
     const char *interface = NULL;
     int rc;
 
-    sd_bus_message_dump(msg, stderr, SD_BUS_MESSAGE_DUMP_WITH_HEADER);
-    sd_bus_message_rewind(msg, 1);
+    DBG("Notify CB\n");
+
+    if (PRDBG) {
+        sd_bus_message_dump(msg, stderr, SD_BUS_MESSAGE_DUMP_WITH_HEADER);
+        sd_bus_message_rewind(msg, 1);
+    }
 
     rc = sd_bus_message_read(msg, "s", &interface);
     if (rc < 0) {
@@ -259,7 +139,7 @@ static int notify_cb(sd_bus_message *msg, void *userdata, sd_bus_error *ret_erro
         if (rc < 0) {
             DBG("Enter dict Failed\n");
         }
-        /* read Property name (key of dict)*/
+        /* read property name (key of dict)*/
         rc = sd_bus_message_read(msg, "s", &key);
         if (rc < 0) {
             DBG("Read: 's' failed: %d\n", rc);
@@ -267,31 +147,27 @@ static int notify_cb(sd_bus_message *msg, void *userdata, sd_bus_error *ret_erro
             return 0;
         }
         if (rc == 0) {
-            DBG("Read: 'a' finised\n");
+            DBG("Read: 'a' finished\n");
             break;
         }
         DBG("Key: %s\n", key);
+
+        /* ignore everything but 'Value' */
         if (strcmp(key, "Value")) {
-            DBG("Skip %s\n", key);
             rc = sd_bus_message_skip(msg, "v");
             if (rc < 0) {
                 DBG("SKIP 'v' failed\n");
             }
-            // rc = sd_bus_message_exit_container(msg);
-            // if (rc < 0) {
-            //     DBG("Exit dict failed\n");
-            // }
-            // continue;
         } else {
             DBG("Read Value\n");
-            // TODO: sd_bus_message_read_array
-
             rc = copy_property_value_msg(hd, msg);
+
             if (rc) {
                 fprintf(stderr, "Decode and copy message failed: %d\n", rc);
                 hd->read_rc = rc;
             } else {
                 if (mgmt_header_is_rsp_complete(hd->readbuf, hd->readoff)) {
+                    /* finished, exit event loop */
                     sd_event *loop = NULL;
                     sd_event_default(&loop);
                     sd_event_exit(loop, 0);
@@ -305,11 +181,11 @@ static int notify_cb(sd_bus_message *msg, void *userdata, sd_bus_error *ret_erro
         }
     }
 
+    /* on error, exit loop */
     if (rc < 0) {
         sd_event *loop = NULL;
         sd_event_default(&loop);
         sd_event_exit(loop, rc);
-        // sd_event_unref(loop);
     }
 
     /* leave root dict */
@@ -320,6 +196,16 @@ static int notify_cb(sd_bus_message *msg, void *userdata, sd_bus_error *ret_erro
     return 0;
 }
 
+static int stop_notify(struct smp_sd_bluez_handle *hd, const char *path)
+{
+    (void)path;
+    if (hd->slot) {
+        sd_bus_slot_unref(hd->slot);
+        hd->slot = NULL;
+    }
+
+    return 0;
+}
 
 static int setup_notify(struct smp_sd_bluez_handle *hd, const char *path)
 {
@@ -327,7 +213,7 @@ static int setup_notify(struct smp_sd_bluez_handle *hd, const char *path)
 
     DBG("Add match: %s %s %s %s\n", BLUEZ, path, IF_PROPERTIES, "PropertiesChanged");
     if (hd->slot) {
-        sd_bus_slot_unref(hd->slot);
+        stop_notify(hd, path);
     }
 
     rc = sd_bus_match_signal(hd->bus, &hd->slot, BLUEZ, path, IF_PROPERTIES, "PropertiesChanged", notify_cb, hd);
@@ -342,69 +228,6 @@ static int setup_notify(struct smp_sd_bluez_handle *hd, const char *path)
     return rc;
 }
 
-static int stop_notify(struct smp_sd_bluez_handle *hd, const char *path)
-{
-    (void)path;
-    if (hd->slot) {
-        sd_bus_slot_unref(hd->slot);
-        hd->slot = NULL;
-    }
-
-    return 0;
-}
-
-static int connect_device(struct smp_sd_bluez_handle *hd, const char *path)
-{
-    int rc;
-    sd_bus_message *msg = NULL;
-    sd_bus_error err = SD_BUS_ERROR_NULL;
-    DBG("Call: %s %s %s %s\n", BLUEZ, path, IF_DEVICE, "Connect");
-    rc = sd_bus_call_method(hd->bus, BLUEZ,path, IF_DEVICE, "Connect", &err, &msg, "");
-
-    if (rc < 0) {
-        if (rc == -EINVAL) {
-            assert(rc != -EINVAL);
-        } else if (err.message) {
-            fprintf(stderr, "Failed to connect: %s", err.message);
-        }
-     } else {
-        rc = 0;
-    }
-
-    sd_bus_message_unref(msg);
-    return rc;
-}
-
-
-static int check_smp_uuid(struct smp_sd_bluez_handle *hd, const char *path)
-{
-    char *uuid = NULL;
-    sd_bus_error err = SD_BUS_ERROR_NULL;
-    int rc;
-
-    DBG("Get property: %s %s %s %s\n", BLUEZ, path, IF_CHAR, "UUID");
-    rc = sd_bus_get_property_string(hd->bus, BLUEZ, path, IF_CHAR, "UUID", &err, &uuid);
-
-    if (rc < 0) {
-        /* also get -EINVAL if e.g interface does not exist on existing object. */
-        if (rc == -EINVAL) {
-            assert(rc != -EINVAL);
-        } else if (err.message) {
-            fprintf(stderr, "Failed to check mcumgr characteristic UUID: %s", err.message);
-        }
-        return rc;
-    } else {
-        rc = 0;
-    }
-    if (0 != (strcmp(uuid, SMP_BLUETOOTH_UUID))) {
-        fprintf(stderr, "Wrong characteristic with uuid %s\n", uuid);
-        rc = -EINVAL;
-    }
-    if (uuid) {
-        free(uuid);
-    }
-    return rc;
-}
 
 static int get_mtu(struct smp_sd_bluez_handle *hd, const char *path)
 {
@@ -431,13 +254,13 @@ static int get_mtu(struct smp_sd_bluez_handle *hd, const char *path)
     return rc;
 }
 
-int sd_bluez_transport_connect(struct smp_transport *transport)
+static int sd_bluez_transport_connect(struct smp_transport *transport)
 {
     if (!transport) {
         return -EINVAL;
     }
 
-    struct smp_sd_bluez_handle *hd = get_handle(transport);
+    struct smp_sd_bluez_handle *hd = sd_bluez_get_handle(transport);
     if (!hd) {
         return -EINVAL;
     }
@@ -449,12 +272,12 @@ int sd_bluez_transport_connect(struct smp_transport *transport)
         fprintf(stderr, "Using transport opts: %s\n", sopts->mcumgr_char);
     }
 
-    rc = connect_device(hd, hd->dev_path);
+    rc = sd_bluez_connect_device(hd, hd->dev_path);
     if (rc) {
         return rc;
     }
 
-    rc = check_smp_uuid(hd, hd->opts.mcumgr_char);
+    rc = sd_bluez_check_smp_uuid(hd, hd->opts.mcumgr_char);
     if (rc) {
         return rc;
     }
@@ -483,9 +306,7 @@ int sd_bluez_transport_connect(struct smp_transport *transport)
 }
 
 
-#define TMP_BUF_SZ 512
-
-int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *buf, size_t len)
+static int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *buf, size_t len)
 {
     DBG("Write\n");
 
@@ -495,7 +316,7 @@ int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *buf, size
         return -EINVAL;
     }
 
-    struct smp_sd_bluez_handle *hd = get_handle(transport);
+    struct smp_sd_bluez_handle *hd = sd_bluez_get_handle(transport);
 
     if (!hd) {
         return -EINVAL;
@@ -555,16 +376,6 @@ int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *buf, size
 }
 
 
-// static int time_now(void)
-// {
-//     struct timeval tv;
-
-//     gettimeofday(&tv, NULL);
-
-//     return tv.tv_sec;
-// }
-
-
 static int sd_bluez_transport_read(struct smp_transport *transport, uint8_t *buf, size_t maxlen)
 {
     int rc = 0;
@@ -575,7 +386,7 @@ static int sd_bluez_transport_read(struct smp_transport *transport, uint8_t *buf
         return -EINVAL;
     }
 
-    struct smp_sd_bluez_handle *hd = get_handle(transport);
+    struct smp_sd_bluez_handle *hd = sd_bluez_get_handle(transport);
 
     if (!hd) {
         return -EINVAL;
@@ -587,7 +398,6 @@ static int sd_bluez_transport_read(struct smp_transport *transport, uint8_t *buf
 
     DBG("Read: tmo: %d, maxlen: %d\n", tmo, (int)maxlen);
 
-    // int now = time_now();
 
     sd_event* loop = NULL;
     rc = sd_event_default(&loop);
@@ -624,9 +434,9 @@ static int sd_bluez_transport_read(struct smp_transport *transport, uint8_t *buf
     return rc;
 }
 
-void sd_bluez_transport_close(struct smp_transport *transport)
+static void sd_bluez_transport_close(struct smp_transport *transport)
 {
-    struct smp_sd_bluez_handle *hd = get_handle(transport);
+    struct smp_sd_bluez_handle *hd = sd_bluez_get_handle(transport);
 
     stop_notify(hd, hd->opts.mcumgr_char);
 
@@ -646,44 +456,17 @@ static const struct smp_operations sd_bluez_transport_ops = {
 };
 
 
-static int dev_path_from_char_path(struct smp_sd_bluez_handle *hd, const char *mcumgr_path)
-{
-    int i = 0;
-    char *tmp = hd->dev_path;
-
-    strncpy(hd->dev_path, mcumgr_path, sizeof(hd->dev_path) - 1);
-
-    for (; *tmp != '\0'; ++tmp) {
-        if (*tmp == '/') {
-            ++i;
-            if (i == 5) {
-                *tmp = '\0';
-                break;
-            }
-        }
-    }
-    if (i < 4) {
-        return -EINVAL;
-    }
-    return 0;
-}
-
-int sd_bluez_transport_init(struct smp_transport *transport, struct smp_sd_bluez_handle *hd, struct sd_bluez_opts *bopts)
+int sd_bluez_dbus_transport_init(struct smp_transport *transport, struct smp_sd_bluez_handle *hd, struct sd_bluez_opts *bopts)
 {
     int rc;
 
     if (!transport || !hd || !bopts) {
         return -EINVAL;
     }
-    memset(transport, 0, sizeof(*transport));
-    memset(hd, 0, sizeof(*hd));
 
     transport->ops = &sd_bluez_transport_ops;
-    transport->hd = (struct smp_handle*) hd;
 
-    hd->opts = *bopts;
-
-    rc = dev_path_from_char_path(hd, bopts->mcumgr_char);
+    rc = sd_bluez_fill_dev_path(hd);
     if (rc) {
         DBG("PATH conv failed\n");
         return rc;

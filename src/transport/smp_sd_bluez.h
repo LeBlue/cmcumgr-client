@@ -8,9 +8,17 @@
 
 #include <systemd/sd-bus.h>
 
+enum sd_bluez_method {
+    SD_BLUEZ_METHOD_NONE = 0,
+    SD_BLUEZ_METHOD_DBUS,
+    SD_BLUEZ_METHOD_FD,
+};
+
+
 struct sd_bluez_opts {
     const char *mcumgr_char;
     int mtu;
+    enum sd_bluez_method method;
 };
 
 struct smp_transport;
@@ -24,12 +32,18 @@ struct smp_sd_bluez_handle {
     size_t readoff;
     int read_rc;
 
-    /* for char value based implementation */
-    sd_bus_slot *slot; /* notify handle */
+    union {
+        /* for char value based implementation */
+        struct {
+            sd_bus_slot *slot; /* notify handle */
+        };
+        /* fd based implementation */
 
-    /* fd based implementation */
-    int wfd; /* write fd */
-    int nfd; /* notify fd */
+        struct {
+            int wfd; /* write fd */
+            int nfd; /* notify fd */
+        };
+    };
 };
 
 int sd_bluez_transport_init(struct smp_transport *transport, struct smp_sd_bluez_handle *hd, struct sd_bluez_opts *sopts);

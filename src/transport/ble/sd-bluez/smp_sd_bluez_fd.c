@@ -26,51 +26,39 @@
 
 #include "byteordering.h"
 
+#include "../smp_ble.h"
+
 #include "smp_transport.h"
+
 #include "smp_sd_bluez.h"
+#include "sd_bluez.h"
 
-#define PRDBG 1
-#if PRDBG
-#include <stdio.h>
-#define DBG(fmt, args...) do { fprintf(stderr, "dbg: smp_sd_bluez: " fmt, ##args); } while (0)
-#else
-#define DBG(fmt, args...) do {} while (0)
-#endif
-
-#define SMP_BLUETOOTH_UUID "da2e7828-fbce-4e01-ae9e-261174997c48"
-
-// static const char BLUEZ[] = "org.bluez";
-#define BLUEZ "org.bluez"
-static const char IF_ADAPTER[] = "org.bluez.Adapter1";
-// static const char IF_DEVICE[] = "org.bluez.Device1";
-#define IF_DEVICE "org.bluez.Device1"
-static const char IF_CHAR[] = "org.bluez.GattCharacteristic1";
+// #define PRDBG 1
+// #if PRDBG
+// #define DBG(fmt, args...) do { fprintf(stderr, "dbg: smp_sd_bluez: " fmt, ##args); } while (0)
+// #else
+// #define DBG(fmt, args...) do {} while (0)
+// #endif
 
 #include <assert.h>
-
-static inline struct smp_sd_bluez_handle *get_handle(struct smp_transport *transport)
-{
-    struct smp_sd_bluez_handle *hd = (struct smp_sd_bluez_handle *) transport->hd;
-    return hd;
-}
 
 
 int get_notify_fd(struct smp_sd_bluez_handle *hd, const char *path)
 {
     int rc;
     sd_bus_message *msg = NULL;
-    sd_bus_error err = SD_BUS_ERROR_NULL;
+    sd_bus_error sderr = SD_BUS_ERROR_NULL;
     uint16_t mtu;
     int fd;
 
     DBG("Call: %s %s %s %s\n", BLUEZ, path, IF_CHAR, "AcquireNotify");
-    rc = sd_bus_call_method(hd->bus, BLUEZ, path, IF_CHAR, "AcquireNotify", &err, &msg, "a{sv}", 0, NULL);
+    rc = sd_bus_call_method(hd->bus, BLUEZ, path, IF_CHAR, "AcquireNotify", &sderr, &msg, "a{sv}", 0, NULL);
 
     if (rc < 0) {
         if (rc == -EINVAL) {
             assert(rc != -EINVAL);
-        } else if (err.message) {
-            fprintf(stderr, "Failed to connect: %s\n", err.message);
+        } else if (sderr.message) {
+            fprintf(stderr, "Failed to connect: %s\n", sderr.message);
         }
         goto cleanup;
 
@@ -104,18 +92,18 @@ int get_write_fd(struct smp_sd_bluez_handle *hd, const char *path)
 {
     int rc;
     sd_bus_message *msg = NULL;
-    sd_bus_error err = SD_BUS_ERROR_NULL;
+    sd_bus_error sderr = SD_BUS_ERROR_NULL;
     uint16_t mtu;
     int fd;
 
-    DBG("Call: %s %s %s %s\n", BLUEZ, hd->opts.mcumgr_char, IF_CHAR, "AcquireWrite");
-    rc = sd_bus_call_method(hd->bus, BLUEZ, hd->opts.mcumgr_char, IF_CHAR, "AcquireWrite", &err, &msg, "a{sv}", 0, NULL);
+    DBG("Call: %s %s %s %s\n", BLUEZ, path, IF_CHAR, "AcquireWrite");
+    rc = sd_bus_call_method(hd->bus, BLUEZ, path, IF_CHAR, "AcquireWrite", &sderr, &msg, "a{sv}", 0, NULL);
 
     if (rc < 0) {
         if (rc == -EINVAL) {
             assert(rc != -EINVAL);
-        } else if (err.message) {
-            fprintf(stderr, "Failed to connect: %s\n", err.message);
+        } else if (sderr.message) {
+            fprintf(stderr, "Failed to AcquireWrite: %s\n", sderr.message);
         }
         goto cleanup;
     } else {
@@ -149,7 +137,7 @@ int sd_bluez_transport_connect(struct smp_transport *transport)
         return -EINVAL;
     }
 
-    struct smp_sd_bluez_handle *hd = get_handle(transport);
+    struct smp_sd_bluez_handle *hd = sd_bluez_get_handle(transport);
     if (!hd) {
         return -EINVAL;
     }
@@ -161,49 +149,15 @@ int sd_bluez_transport_connect(struct smp_transport *transport)
         fprintf(stderr, "Using transport opts: %s\n", sopts->mcumgr_char);
     }
 
-    sd_bus_message *msg = NULL;
-    sd_bus_error err = SD_BUS_ERROR_NULL;
-    DBG("Call: %s %s %s %s\n", BLUEZ, hd->opts.mcumgr_char, IF_DEVICE, "Connect");
-    rc = sd_bus_call_method(hd->bus, BLUEZ, hd->dev_path, IF_DEVICE, "Connect", &err, &msg, "");
-
+    rc = sd_bluez_connect_device(hd, hd->dev_path);
     if (rc < 0) {
-        if (rc == -EINVAL) {
-            assert(rc != -EINVAL);
-        } else if (err.message) {
-            fprintf(stderr, "Failed to connect: %s", err.message);
-        }
-        sd_bus_message_unref(msg);
         return rc;
-    } else {
-        rc = 0;
     }
 
-    err = SD_BUS_ERROR_NULL;
-    sd_bus_message_unref(msg);
-    msg = NULL;
-    char *uuid = NULL;
-
-    sd_bus_error errp = SD_BUS_ERROR_NULL;
-    DBG("Get property: %s %s %s %s\n", BLUEZ, hd->opts.mcumgr_char, IF_CHAR, "UUID");
-    rc = sd_bus_get_property_string(hd->bus, BLUEZ, hd->opts.mcumgr_char, IF_CHAR, "UUID", &errp, &uuid);
-
+    rc = sd_bluez_check_smp_uuid(hd, hd->opts.mcumgr_char);
     if (rc < 0) {
-        /* also get -EINVAL if e.g interface does not exist on existing object. */
-        if (rc == -EINVAL) {
-            assert(rc != -EINVAL);
-        } else if (err.message) {
-            fprintf(stderr, "Failed to check mcumgr characteristic UUID: %s", err.message);
-        }
         return rc;
-    } else {
-        rc = 0;
     }
-    if (0 != (strcmp(uuid, SMP_BLUETOOTH_UUID))) {
-        fprintf(stderr, "Wrong characteristic with uuid %s\n", uuid);
-        free(uuid);
-        return -EINVAL;
-    }
-    free(uuid);
 
     rc = get_notify_fd(hd, hd->opts.mcumgr_char);
     if (rc) {
@@ -223,16 +177,13 @@ int sd_bluez_transport_connect(struct smp_transport *transport)
 
 int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *buf, size_t len)
 {
-    DBG("Write\n");
-
-    DBG("transport: %p, buf: %p, len: %d\n", transport, buf, (int)len);
+    DBG("Write: transport: %p, buf: %p, len: %d\n", transport, buf, (int)len);
 
     if (!transport || !buf || !len) {
         return -EINVAL;
     }
 
-
-    struct smp_sd_bluez_handle *hd = get_handle(transport);
+    struct smp_sd_bluez_handle *hd = sd_bluez_get_handle(transport);
 
     DBG("hd: %p, wfd: %d\n", hd, hd->wfd ? hd->wfd : -2);
 
@@ -240,9 +191,7 @@ int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *buf, size
         return -EINVAL;
     }
 
-    DBG("Write 2\n");
-
-    if (len > (hd->mtu - 3) ) {
+    if (len > (size_t) (hd->mtu - 3)) {
         return -E2BIG;
     }
 
@@ -254,7 +203,6 @@ int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *buf, size
     } else {
         DBG("Written %d bytes\n", (int) cnt);
     }
-
 
     return 0;
 }
@@ -282,7 +230,7 @@ static int sd_bluez_transport_read(struct smp_transport *transport, uint8_t *buf
         return -EINVAL;
     }
 
-    struct smp_sd_bluez_handle *hd = get_handle(transport);
+    struct smp_sd_bluez_handle *hd = sd_bluez_get_handle(transport);
 
     if (!hd || hd->nfd < 0) {
         return -EINVAL;
@@ -294,17 +242,16 @@ static int sd_bluez_transport_read(struct smp_transport *transport, uint8_t *buf
 
     DBG("Read: tmo: %d, maxlen: %d\n", tmo, (int)readlen);
 
-    int now = time_now();
-    int end_time = now + tmo + 2;
+    int end_time = time_now() + tmo + 2;
 
     while (readlen > 0) {
 
-        now = time_now();
+        int now = time_now();
         if (now > end_time) {
             fprintf(stderr, "Read timed out\n");
             return -ETIMEDOUT;
         }
-
+        /* TODO: use poll */
         ssize_t cnt = read(hd->nfd, readbuf, readlen);
         if (cnt < 0) {
             int err = errno;
@@ -320,26 +267,22 @@ static int sd_bluez_transport_read(struct smp_transport *transport, uint8_t *buf
             if (mgmt_header_is_rsp_complete(buf, maxlen - readlen)) {
                 DBG("Complete\n");
                 return maxlen - readlen;
-                // break;
             }
             DBG("Read, %d\n", (int) (maxlen - readlen));
         } else {
             printf("Read 0\n");
             return -ETIMEDOUT;
         }
-
     }
 
     DBG("Read, %d\n", (int) (maxlen - readlen));
 
-
     return rc;
 }
 
-void sd_bluez_transport_close(struct smp_transport *transport)
+static void sd_bluez_transport_close(struct smp_transport *transport)
 {
-    struct smp_sd_bluez_handle *hd = get_handle(transport);
-    int rc = 0;
+    struct smp_sd_bluez_handle *hd = sd_bluez_get_handle(transport);
 
     if (hd->wfd >= 0) {
         close(hd->wfd);
@@ -363,39 +306,26 @@ static const struct smp_operations sd_bluez_transport_ops = {
 };
 
 
-int sd_bluez_transport_init(struct smp_transport *transport, struct smp_sd_bluez_handle *hd, struct sd_bluez_opts *bopts)
+int sd_bluez_fd_transport_init(struct smp_transport *transport, struct smp_sd_bluez_handle *hd, struct sd_bluez_opts *bopts)
 {
     if (!transport || !hd || !bopts) {
         return -EINVAL;
     }
-    memset(transport, 0, sizeof(*transport));
-    memset(hd, 0, sizeof(*hd));
 
     transport->ops = &sd_bluez_transport_ops;
-    transport->hd = (struct smp_handle*) hd;
 
-    hd->opts = *bopts;
     hd->nfd = -1;
     hd->wfd = -1;
-    strncpy(hd->dev_path, bopts->mcumgr_char, sizeof(hd->dev_path) - 1);
-    int i = 0;
-    char *tmp = hd->dev_path;
-    for (; *tmp != '\0'; ++tmp) {
-        if (*tmp == '/') {
-            ++i;
-            if (i == 5) {
-                *tmp = '\0';
-                break;
-            }
-        }
-    }
-    if (i < 4) {
-        return -EINVAL;
+
+    int rc = sd_bus_default_system(&hd->bus);
+    if (!rc) {
+        return rc;
     }
 
-    int ret = sd_bus_default_system(&hd->bus);
-    if (!ret) {
-        return ret;
+    rc = sd_bluez_fill_dev_path(hd);
+    if (rc) {
+        DBG("PATH conv failed\n");
+        return rc;
     }
 
     return 0;
