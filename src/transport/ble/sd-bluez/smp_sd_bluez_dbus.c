@@ -93,10 +93,10 @@ static int notify_cb(sd_bus_message *msg, void *userdata, sd_bus_error *ret_erro
 
     DBG("Notify CB\n");
 
-    if (PRDBG) {
-        sd_bus_message_dump(msg, stderr, SD_BUS_MESSAGE_DUMP_WITH_HEADER);
-        sd_bus_message_rewind(msg, 1);
-    }
+    // if (PRDBG) {
+    //     sd_bus_message_dump(msg, stderr, SD_BUS_MESSAGE_DUMP_WITH_HEADER);
+    //     sd_bus_message_rewind(msg, 1);
+    // }
 
     rc = sd_bus_message_read(msg, "s", &interface);
     if (rc < 0) {
@@ -181,6 +181,11 @@ static int notify_cb(sd_bus_message *msg, void *userdata, sd_bus_error *ret_erro
         }
     }
 
+    /* leave root dict */
+    sd_bus_message_exit_container(msg);
+    /* ignore additional properties invalided: 'as', at end of message */
+
+
     /* on error, exit loop */
     if (rc < 0) {
         sd_event *loop = NULL;
@@ -188,10 +193,6 @@ static int notify_cb(sd_bus_message *msg, void *userdata, sd_bus_error *ret_erro
         sd_event_exit(loop, rc);
     }
 
-    /* leave root dict */
-    rc = sd_bus_message_exit_container(msg);
-
-    /* ignore additional properties invalided: 'as', at end of message */
 
     return 0;
 }
@@ -243,7 +244,7 @@ static int get_mtu(struct smp_sd_bluez_handle *hd, const char *path)
         if (rc == -EINVAL) {
             assert(rc != -EINVAL);
         } else if (err.message) {
-            fprintf(stderr, "Failed to get MTU: %s", err.message);
+            fprintf(stderr, "Failed to get MTU: %s\n", err.message);
         }
         return rc;
     } else {
@@ -265,11 +266,16 @@ static int sd_bluez_transport_connect(struct smp_transport *transport)
         return -EINVAL;
     }
 
-    struct sd_bluez_opts *sopts = &hd->opts;
     int rc = 0;
 
     if (transport->verbose) {
-        fprintf(stderr, "Using transport opts: %s\n", sopts->mcumgr_char);
+        fprintf(stderr, "Using transport opts: %s\n", hd->opts.mcumgr_char);
+    }
+
+    rc = sd_bus_default_system(&hd->bus);
+    if (rc < 0) {
+        DBG("Get bus failed: %d\n", rc);
+        return rc;
     }
 
     rc = sd_bluez_connect_device(hd, hd->dev_path);
@@ -282,8 +288,9 @@ static int sd_bluez_transport_connect(struct smp_transport *transport)
         return rc;
     }
 
-    if (hd->opts.mtu) {
+    if (1 || hd->opts.mtu) {
         hd->mtu = hd->opts.mtu;
+        hd->mtu = 252;
     } else {
         rc = get_mtu(hd, hd->opts.mcumgr_char);
         if (rc) {
@@ -308,9 +315,7 @@ static int sd_bluez_transport_connect(struct smp_transport *transport)
 
 static int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *buf, size_t len)
 {
-    DBG("Write\n");
-
-    DBG("transport: %p, buf: %p, len: %d\n", transport, buf, (int)len);
+    DBG("Write transport: %p, buf: %p, len: %d\n", transport, buf, (int)len);
 
     if (!transport || !buf || !len) {
         return -EINVAL;
@@ -340,7 +345,7 @@ static int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *bu
         if (rc == -EINVAL) {
             assert(rc != -EINVAL);
         } else if (err.message) {
-            fprintf(stderr, "Failed to create write message: %s", err.message);
+            fprintf(stderr, "Failed to create write message: %s\n", err.message);
         }
      } else {
         rc = 0;
@@ -363,7 +368,7 @@ static int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *bu
         if (rc == -EINVAL) {
             assert(rc != -EINVAL);
         } else if (err.message) {
-            fprintf(stderr, "Failed write: %s", err.message);
+            fprintf(stderr, "Failed write: %s\n", err.message);
         }
      } else {
         rc = 0;
@@ -469,12 +474,6 @@ int sd_bluez_dbus_transport_init(struct smp_transport *transport, struct smp_sd_
     rc = sd_bluez_fill_dev_path(hd);
     if (rc) {
         DBG("PATH conv failed\n");
-        return rc;
-    }
-
-    rc = sd_bus_default_system(&hd->bus);
-    if (rc < 0) {
-        DBG("Get bus failed: %d\n", rc);
         return rc;
     }
 
