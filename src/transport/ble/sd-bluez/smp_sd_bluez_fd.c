@@ -33,13 +33,6 @@
 #include "smp_sd_bluez.h"
 #include "sd_bluez.h"
 
-// #define PRDBG 1
-// #if PRDBG
-// #define DBG(fmt, args...) do { fprintf(stderr, "dbg: smp_sd_bluez: " fmt, ##args); } while (0)
-// #else
-// #define DBG(fmt, args...) do {} while (0)
-// #endif
-
 #include <assert.h>
 
 
@@ -73,7 +66,7 @@ int get_notify_fd(struct smp_sd_bluez_handle *hd, const char *path)
         goto cleanup;
     } else {
         rc = 0;
-        hd->mtu = mtu;
+        // hd->mtu = mtu; /* do not save MTU, only write is relevant */
         hd->nfd = fcntl(fd, F_DUPFD_CLOEXEC, 3);
         if (hd->nfd < 0) {
             int err = errno;
