@@ -34,6 +34,9 @@ int parse_sd_bluez_connstring(const char* connstring, struct sd_bluez_opts *sdbz
     if (!subopts) {
         return -ENOMEM;
     }
+
+    memset(sdbz_opts, 0, sizeof(*sdbz_opts));
+
     /* use as default */
     sdbz_opts->method = SD_BLUEZ_METHOD_DBUS;
 
