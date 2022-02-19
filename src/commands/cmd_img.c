@@ -132,7 +132,7 @@ int cmd_img_run_image_erase(struct smp_transport *transport, struct mgmt_rc *rsp
     }
 
     if (transport->verbose) {
-        ehexdump(buf, cnt, "image list req");
+        ehexdump(buf, cnt, "image erase req");
     }
 
     return cmd_run_rc_rsp(transport, buf, cnt, sizeof(buf), rsp);
@@ -146,6 +146,27 @@ struct upload_state {
     size_t offs;
 };
 
+
+static int cbor_len_overhead(size_t len)
+{
+    if (len < 24) {
+        return 0;
+    }
+    if (len < 256) {
+        return 1;
+    }
+    if (len < 65535) {
+        return 2;
+    }
+    /* do not expect bigger values */
+    return 4;
+}
+
+static int cbor_enc_overhead(size_t offset, size_t seglen)
+{
+    return cbor_len_overhead(offset) + cbor_len_overhead(seglen);
+}
+
 int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_upload_req *req, struct mgmt_rc *rsp, upload_progress_fn cb)
 {
     uint8_t buf[CMD_BUF_SZ];
@@ -153,7 +174,9 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
     struct upload_state state = {0};
     int rc, buflen;
     uint8_t file_buf[256];
-    size_t fsz = sizeof(file_buf);
+    size_t fread_sz;
+    size_t seglen0 = sizeof(file_buf);
+    size_t seglenx = sizeof(file_buf);
 
     rsp->mgmt_rc = 0;
 
@@ -169,24 +192,65 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
         cb(&state.progress);
     }
 
-    rc = req->reader.op->read(req->reader.fh, file_buf, &fsz, 0);
+    /* check how much of data to append */
+    if (transport->ops->get_mtu) {
+        int mtu = transport->ops->get_mtu(transport);
+        if (mtu > 0) {
+            size_t room;
+            int enc_overhead;
+            /* Calculate space for data
+               Create initial request with minimal data (0 bytes) */
+            cnt = mgmt_create_image_upload_seg0_req(buf, sizeof(buf), req->image.file_sz, file_buf, req->image.hash, 0);
+            if (cnt < 0) {
+                fprintf(stderr, "message encoding issue %zu\n", cnt);
+                return (int)cnt;
+            }
+            enc_overhead = cbor_enc_overhead(0, sizeof(file_buf));
+            if (cnt + enc_overhead > (ssize_t) mtu) {
+                fprintf(stderr, "MTU %d is too small\n", mtu);
+            }
+            room = mtu - cnt - enc_overhead; /* account for data length field */
+            if (room > sizeof(file_buf)) {
+                seglen0 = sizeof(file_buf);
+            } else {
+                seglen0 = room;
+            }
+            /* create follow up request with minimal data (0 bytes)
+               use the maximum offset to account for increasing length of encoded offset integer
+            */
+            cnt = mgmt_create_image_upload_segX_req(buf, sizeof(buf), 0, file_buf, 0);
+            if (cnt < 0) {
+                fprintf(stderr, "message encoding issue %zu\n", cnt);
+                return (int)cnt;
+            }
+
+            room = mtu - cnt;
+            if (room > sizeof(file_buf)) {
+                seglenx = sizeof(file_buf);
+            } else {
+                seglenx = room;
+            }
+        }
+        printf("Using MTU: %d, seg0: %d, segX: %d\n", mtu, (int)seglen0, (int)seglenx);
+    }
+
+    fread_sz = seglen0;
+    rc = req->reader.op->read(req->reader.fh, file_buf, &fread_sz, 0);
     if (rc < 0) {
         return rc;
     }
-
-    cnt = mgmt_create_image_upload_seg0_req(buf, sizeof(buf), req->image.file_sz, file_buf, req->image.hash, sizeof(file_buf));
+    cnt = mgmt_create_image_upload_seg0_req(buf, sizeof(buf), req->image.file_sz, file_buf, req->image.hash, seglen0);
 
     if (cnt < 0) {
         fprintf(stderr, "message encoding issue %zu\n", cnt);
         return (int)cnt;
     }
 
+    mgmt_header_update_seq(buf, state.seq);
+
     if (transport->verbose) {
         ehexdump(buf, cnt, "image upload req0");
     }
-
-
-    mgmt_header_update_seq(buf, state.seq);
 
     rc = cmd_run(transport, buf, cnt, sizeof(buf));
 
@@ -217,20 +281,19 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
     }
 
     while (state.offs < req->image.file_sz) {
-        printf("Sending offset: %d\n", (int)state.offs);
-        fsz = sizeof(file_buf);
-        rc = req->reader.op->read(req->reader.fh, file_buf, &fsz, state.offs);
+
+        size_t seglen;
+        if (req->image.file_sz - state.offs < seglenx - cbor_enc_overhead(state.offs, seglenx)) {
+            seglen = req->image.file_sz - state.offs;
+        } else {
+            seglen = seglenx - cbor_enc_overhead(state.offs, seglenx);
+        }
+
+        fread_sz = seglen;
+        rc = req->reader.op->read(req->reader.fh, file_buf, &fread_sz, state.offs);
         if (rc < 0) {
             printf("File read fail at %d\n", (int)state.offs);
             return rc;
-        }
-
-        size_t seglen;
-        if (req->image.file_sz - state.offs < sizeof(file_buf)) {
-            seglen = req->image.file_sz - state.offs;
-            printf("Last segment: %d\n", (int) seglen);
-        } else {
-            seglen = sizeof(file_buf);
         }
 
         cnt = mgmt_create_image_upload_segX_req(buf, sizeof(buf), state.offs, file_buf, seglen);
@@ -240,17 +303,16 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
             return (int)cnt;
         }
 
+        mgmt_header_update_seq(buf, state.seq);
+
         if (transport->verbose) {
             ehexdump(buf, cnt, "image upload reqX");
         }
 
-
-        mgmt_header_update_seq(buf, state.seq);
-
         rc = cmd_run(transport, buf, cnt, sizeof(buf));
 
         if (rc < 0) {
-            fprintf(stderr, "read fail %d\n", rc);
+            fprintf(stderr, "Failed to run cmd: %d\n", rc);
             return rc;
         }
 
@@ -273,10 +335,8 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
             return rc;
         }
 
-
-        printf("New off: %d\n", (int)state.offs);
         if (state.offs <= old_off) {
-            printf("FW upload stall\n");
+            fprintf(stderr, "FW upload stall\n");
             return -EPROTO;
         }
 
