@@ -84,7 +84,7 @@ static int copy_property_value_msg(struct smp_sd_bluez_handle *hd, sd_bus_messag
     return rc;
 }
 
-static int notify_cb(sd_bus_message *msg, void *userdata, sd_bus_error *ret_error)
+static int properties_chaned_cb(sd_bus_message *msg, void *userdata, sd_bus_error *ret_error)
 {
     (void)ret_error;
     struct smp_sd_bluez_handle *hd = (struct smp_sd_bluez_handle *) userdata;
@@ -101,6 +101,7 @@ static int notify_cb(sd_bus_message *msg, void *userdata, sd_bus_error *ret_erro
     rc = sd_bus_message_read(msg, "s", &interface);
     if (rc < 0) {
         assert(rc != -EINVAL);
+        return 0;
     }
 
     DBG("Notify CB: %s\n", interface);
@@ -168,9 +169,7 @@ static int notify_cb(sd_bus_message *msg, void *userdata, sd_bus_error *ret_erro
             } else {
                 if (mgmt_header_is_rsp_complete(hd->readbuf, hd->readoff)) {
                     /* finished, exit event loop */
-                    sd_event *loop = NULL;
-                    sd_event_default(&loop);
-                    sd_event_exit(loop, 0);
+                    sd_event_exit(sd_bus_get_event(hd->bus), 0);
                 }
             }
         }
@@ -188,9 +187,7 @@ static int notify_cb(sd_bus_message *msg, void *userdata, sd_bus_error *ret_erro
 
     /* on error, exit loop */
     if (rc < 0) {
-        sd_event *loop = NULL;
-        sd_event_default(&loop);
-        sd_event_exit(loop, rc);
+        sd_event_exit(sd_bus_get_event(hd->bus), rc);
     }
 
 
@@ -217,7 +214,7 @@ static int setup_notify(struct smp_sd_bluez_handle *hd, const char *path)
         stop_notify(hd, path);
     }
 
-    rc = sd_bus_match_signal(hd->bus, &hd->slot, BLUEZ, path, IF_PROPERTIES, "PropertiesChanged", notify_cb, hd);
+    rc = sd_bus_match_signal(hd->bus, &hd->slot, BLUEZ, path, IF_PROPERTIES, "PropertiesChanged", properties_chaned_cb, hd);
     if (rc < 0) {
         if (rc == -EINVAL) {
             assert(rc != -EINVAL);
@@ -255,7 +252,7 @@ static int get_mtu(struct smp_sd_bluez_handle *hd, const char *path)
     return rc;
 }
 
-static int sd_bluez_transport_connect(struct smp_transport *transport)
+static int sd_bluez_dbus_transport_connect(struct smp_transport *transport)
 {
     if (!transport) {
         return -EINVAL;
@@ -274,7 +271,7 @@ static int sd_bluez_transport_connect(struct smp_transport *transport)
 
     rc = sd_bus_default_system(&hd->bus);
     if (rc < 0) {
-        DBG("Get bus failed: %d\n", rc);
+        DBG("Connect system bus failed: %d\n", rc);
         return rc;
     }
 
@@ -288,9 +285,8 @@ static int sd_bluez_transport_connect(struct smp_transport *transport)
         return rc;
     }
 
-    if (1 || hd->opts.mtu) {
+    if (hd->opts.mtu) {
         hd->mtu = hd->opts.mtu;
-        hd->mtu = 252;
     } else {
         rc = get_mtu(hd, hd->opts.mcumgr_char);
         if (rc) {
@@ -309,11 +305,13 @@ static int sd_bluez_transport_connect(struct smp_transport *transport)
         return rc;
     }
 
+    /* TODO: flush pending dbus messages */
+
     return rc;
 }
 
 
-static int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *buf, size_t len)
+static int sd_bluez_dbus_transport_write(struct smp_transport *transport, uint8_t *buf, size_t len)
 {
     DBG("Write transport: %p, buf: %p, len: %d\n", transport, buf, (int)len);
 
@@ -332,7 +330,6 @@ static int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *bu
         return -E2BIG;
     }
 
-    /* Todo: check write length with MTU */
     int rc;
     sd_bus_message *msg = NULL;
     sd_bus_message *reply = NULL;
@@ -380,7 +377,7 @@ static int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *bu
 }
 
 
-static int sd_bluez_transport_read(struct smp_transport *transport, uint8_t *buf, size_t maxlen)
+static int sd_bluez_dbus_transport_read(struct smp_transport *transport, uint8_t *buf, size_t maxlen)
 {
     int rc = 0;
 
@@ -401,20 +398,12 @@ static int sd_bluez_transport_read(struct smp_transport *transport, uint8_t *buf
     int tmo = transport->timeout * 1000000;
 
     DBG("Read: tmo: %d, maxlen: %d\n", tmo, (int)maxlen);
-
+    hd->readoff = 0;
 
     sd_event* loop = NULL;
-    rc = sd_event_default(&loop);
-
+    rc = sd_event_new(&loop);
     if (rc < 0) {
-        DBG("Failed to init loop\n");
-        return rc;
-    }
-    sd_event_source *timeout = NULL;
-    rc = sd_event_add_time_relative(loop, &timeout, CLOCK_MONOTONIC, tmo, 10000000, NULL, (void*) -ETIMEDOUT);
-    if (rc < 0) {
-        DBG("Failed to add timeout\n");
-        sd_event_unref(loop);
+        fprintf(stderr, "Failed to setup event loop\n");
         return rc;
     }
 
@@ -424,7 +413,30 @@ static int sd_bluez_transport_read(struct smp_transport *transport, uint8_t *buf
         return rc;
     }
 
+    /* add read timeout */
+    sd_event_source *timeout = NULL;
+    rc = sd_event_add_time_relative(loop, &timeout, CLOCK_MONOTONIC, tmo, 10000000, NULL, (void*) -ETIMEDOUT);
+    if (rc < 0) {
+        DBG("Failed to add timeout\n");
+        hd->timeout = NULL;
+        sd_event_unref(loop);
+        return rc;
+    }
+
+    hd->timeout = timeout;
+
+    /* do not close dbus connection on loop exit */
+    sd_bus_set_close_on_exit(hd->bus, 0);
+
+    /* wait for/process events until timeout, or event exits loop */
     rc = sd_event_loop(loop);
+
+    /* cleanup event loop and timeout */
+    sd_event_source_disable_unref(hd->timeout);
+    hd->timeout = NULL;
+    sd_bus_flush(hd->bus);
+    sd_bus_detach_event(hd->bus);
+    sd_event_unref(loop);
 
     if (rc == 0 || rc == -ETIMEDOUT) {
         /* on timeout, just copy what is available */
@@ -433,30 +445,27 @@ static int sd_bluez_transport_read(struct smp_transport *transport, uint8_t *buf
         rc = len;
     }
 
-    sd_bus_detach_event(hd->bus);
-    sd_event_unref(loop);
     return rc;
 }
 
-static void sd_bluez_transport_close(struct smp_transport *transport)
+static void sd_bluez_dbus_transport_close(struct smp_transport *transport)
 {
     struct smp_sd_bluez_handle *hd = sd_bluez_get_handle(transport);
 
     stop_notify(hd, hd->opts.mcumgr_char);
 
-    /* todo: move, as not symmetric with open, but with init */
     if (hd->bus) {
-        sd_bus_unref(hd->bus);
+        sd_bus_flush_close_unref(hd->bus);
         hd->bus = NULL;
     }
 }
 
 
 static const struct smp_operations sd_bluez_transport_ops = {
-    .open = sd_bluez_transport_connect,
-    .read = sd_bluez_transport_read,
-    .write = sd_bluez_transport_write,
-    .close = sd_bluez_transport_close,
+    .open = sd_bluez_dbus_transport_connect,
+    .read = sd_bluez_dbus_transport_read,
+    .write = sd_bluez_dbus_transport_write,
+    .close = sd_bluez_dbus_transport_close,
     .get_mtu = sd_bluez_transport_get_mtu,
 };
 

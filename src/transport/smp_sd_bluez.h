@@ -36,6 +36,7 @@ struct smp_sd_bluez_handle {
         /* for char value based implementation */
         struct {
             sd_bus_slot *slot; /* notify handle */
+            sd_event_source *timeout; /* timeout event handle */
         };
         /* fd based implementation */
 
