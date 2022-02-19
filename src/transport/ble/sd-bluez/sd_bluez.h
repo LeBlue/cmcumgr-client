@@ -37,5 +37,6 @@ static inline struct smp_sd_bluez_handle *sd_bluez_get_handle(struct smp_transpo
 int sd_bluez_check_smp_uuid(struct smp_sd_bluez_handle *hd, const char *path);
 int sd_bluez_connect_device(struct smp_sd_bluez_handle *hd, const char *path);
 int sd_bluez_fill_dev_path(struct smp_sd_bluez_handle *hd);
+int sd_bluez_transport_get_mtu(struct smp_transport *transport);
 
 #endif

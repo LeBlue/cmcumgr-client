@@ -71,6 +71,12 @@ int sd_bluez_connect_device(struct smp_sd_bluez_handle *hd, const char *path)
     return rc;
 }
 
+int sd_bluez_transport_get_mtu(struct smp_transport *transport)
+{
+    struct smp_sd_bluez_handle *hd = sd_bluez_get_handle(transport);
+    return hd->mtu - 3;
+}
+
 
 int sd_bluez_fd_transport_init(struct smp_transport *transport, struct smp_sd_bluez_handle *hd, struct sd_bluez_opts *bopts);
 int sd_bluez_dbus_transport_init(struct smp_transport *transport, struct smp_sd_bluez_handle *hd, struct sd_bluez_opts *bopts);

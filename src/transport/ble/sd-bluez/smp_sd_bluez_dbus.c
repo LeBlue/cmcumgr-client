@@ -322,11 +322,10 @@ static int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *bu
         return -EINVAL;
     }
 
-    DBG("Write 2\n");
-
-    // if (len > (hd->mtu - 3) ) {
-    //     return -E2BIG;
-    // }
+    if (len > (size_t)sd_bluez_transport_get_mtu(transport)) {
+        fprintf(stderr, "MTU %d too small\n", sd_bluez_transport_get_mtu(transport));
+        return -E2BIG;
+    }
 
     /* Todo: check write length with MTU */
     int rc;
@@ -453,6 +452,7 @@ static const struct smp_operations sd_bluez_transport_ops = {
     .read = sd_bluez_transport_read,
     .write = sd_bluez_transport_write,
     .close = sd_bluez_transport_close,
+    .get_mtu = sd_bluez_transport_get_mtu,
 };
 
 

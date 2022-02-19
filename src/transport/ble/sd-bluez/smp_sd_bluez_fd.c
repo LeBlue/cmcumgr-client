@@ -303,6 +303,7 @@ static const struct smp_operations sd_bluez_transport_ops = {
     .read = sd_bluez_transport_read,
     .write = sd_bluez_transport_write,
     .close = sd_bluez_transport_close,
+    .get_mtu = sd_bluez_transport_get_mtu,
 };
 
 
