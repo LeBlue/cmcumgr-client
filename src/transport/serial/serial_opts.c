@@ -31,6 +31,10 @@ int parse_serial_connstring(const char* connstring, struct serial_opts *ser_opts
     int speed;
     char *endptr = NULL;
 
+    memset(ser_opts, 0 , sizeof(*ser_opts));
+    /* defaults */
+    ser_opts->speed = 115200;
+
     subopts = strdup(connstring);
     if (!subopts) {
         return -ENOMEM;
@@ -62,6 +66,11 @@ int parse_serial_connstring(const char* connstring, struct serial_opts *ser_opts
                 fprintf(stderr, "No match found for suboption: '%s'\n", value);
                 return -EINVAL;
         }
+    }
+
+    if (!ser_opts->port_name) {
+        fprintf(stderr, "Missing serial option '%s'\n", token[DEV_OPT]);
+        return -ENODATA;
     }
 
     return 0;
