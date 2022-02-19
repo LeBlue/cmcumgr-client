@@ -135,6 +135,11 @@ int sd_bluez_transport_connect(struct smp_transport *transport)
         return -EINVAL;
     }
 
+    int rc = sd_bus_default_system(&hd->bus);
+    if (!rc) {
+        return rc;
+    }
+
     struct sd_bluez_opts *sopts = &hd->opts;
     int rc = 0;
 
@@ -310,11 +315,6 @@ int sd_bluez_fd_transport_init(struct smp_transport *transport, struct smp_sd_bl
 
     hd->nfd = -1;
     hd->wfd = -1;
-
-    int rc = sd_bus_default_system(&hd->bus);
-    if (!rc) {
-        return rc;
-    }
 
     rc = sd_bluez_fill_dev_path(hd);
     if (rc) {
