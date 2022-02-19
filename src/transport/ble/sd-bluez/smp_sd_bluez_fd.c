@@ -36,7 +36,7 @@
 #include <assert.h>
 
 
-int get_notify_fd(struct smp_sd_bluez_handle *hd, const char *path)
+static int get_notify_fd(struct smp_sd_bluez_handle *hd, const char *path)
 {
     int rc;
     sd_bus_message *msg = NULL;
@@ -66,7 +66,6 @@ int get_notify_fd(struct smp_sd_bluez_handle *hd, const char *path)
         goto cleanup;
     } else {
         rc = 0;
-        // hd->mtu = mtu; /* do not save MTU, only write is relevant */
         hd->nfd = fcntl(fd, F_DUPFD_CLOEXEC, 3);
         if (hd->nfd < 0) {
             int err = errno;
@@ -81,7 +80,7 @@ cleanup:
     return rc;
 }
 
-int get_write_fd(struct smp_sd_bluez_handle *hd, const char *path)
+static int get_write_fd(struct smp_sd_bluez_handle *hd, const char *path)
 {
     int rc;
     sd_bus_message *msg = NULL;
@@ -124,7 +123,7 @@ cleanup:
     return rc;
 }
 
-int sd_bluez_transport_connect(struct smp_transport *transport)
+int sd_bluez_fd_transport_connect(struct smp_transport *transport)
 {
     if (!transport) {
         return -EINVAL;
@@ -135,13 +134,13 @@ int sd_bluez_transport_connect(struct smp_transport *transport)
         return -EINVAL;
     }
 
-    int rc = sd_bus_default_system(&hd->bus);
+    struct sd_bluez_opts *sopts = &hd->opts;
+    int rc = 0;
+
+    rc = sd_bus_default_system(&hd->bus);
     if (!rc) {
         return rc;
     }
-
-    struct sd_bluez_opts *sopts = &hd->opts;
-    int rc = 0;
 
     if (transport->verbose) {
         fprintf(stderr, "Using transport opts: %s\n", sopts->mcumgr_char);
@@ -173,7 +172,7 @@ int sd_bluez_transport_connect(struct smp_transport *transport)
 
 #define TMP_BUF_SZ 512
 
-int sd_bluez_transport_write(struct smp_transport *transport, uint8_t *buf, size_t len)
+int sd_bluez_fd_transport_write(struct smp_transport *transport, uint8_t *buf, size_t len)
 {
     DBG("Write: transport: %p, buf: %p, len: %d\n", transport, buf, (int)len);
 
@@ -216,7 +215,7 @@ static int time_now(void)
 }
 
 
-static int sd_bluez_transport_read(struct smp_transport *transport, uint8_t *buf, size_t maxlen)
+static int sd_bluez_fd_transport_read(struct smp_transport *transport, uint8_t *buf, size_t maxlen)
 {
     int rc = 0;
     size_t readlen = maxlen;
@@ -268,7 +267,7 @@ static int sd_bluez_transport_read(struct smp_transport *transport, uint8_t *buf
             }
             DBG("Read, %d\n", (int) (maxlen - readlen));
         } else {
-            printf("Read 0\n");
+            DBG("Read 0\n");
             return -ETIMEDOUT;
         }
     }
@@ -278,8 +277,12 @@ static int sd_bluez_transport_read(struct smp_transport *transport, uint8_t *buf
     return rc;
 }
 
-static void sd_bluez_transport_close(struct smp_transport *transport)
+static void sd_bluez_fd_transport_close(struct smp_transport *transport)
 {
+    if (!transport) {
+        return;
+    }
+
     struct smp_sd_bluez_handle *hd = sd_bluez_get_handle(transport);
 
     if (hd->wfd >= 0) {
@@ -297,16 +300,18 @@ static void sd_bluez_transport_close(struct smp_transport *transport)
 
 
 static const struct smp_operations sd_bluez_transport_ops = {
-    .open = sd_bluez_transport_connect,
-    .read = sd_bluez_transport_read,
-    .write = sd_bluez_transport_write,
-    .close = sd_bluez_transport_close,
+    .open = sd_bluez_fd_transport_connect,
+    .read = sd_bluez_fd_transport_read,
+    .write = sd_bluez_fd_transport_write,
+    .close = sd_bluez_fd_transport_close,
     .get_mtu = sd_bluez_transport_get_mtu,
 };
 
 
 int sd_bluez_fd_transport_init(struct smp_transport *transport, struct smp_sd_bluez_handle *hd, struct sd_bluez_opts *bopts)
 {
+    int rc;
+
     if (!transport || !hd || !bopts) {
         return -EINVAL;
     }
