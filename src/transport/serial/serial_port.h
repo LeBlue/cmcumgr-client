@@ -17,8 +17,8 @@
  * under the License.
  */
 
-#ifndef _SERIAL_UPLOAD_H_
-#define _SERIAL_UPLOAD_H_
+#ifndef _SERIAL_PORT_H_
+#define _SERIAL_PORT_H_
 
 #ifndef WIN32
 typedef int HANDLE;
@@ -29,6 +29,8 @@ int port_setup(HANDLE fd, unsigned long speed);
 int port_write_data(HANDLE fd, const void *buf, size_t len);
 int port_read_poll(HANDLE fd, char *buf, size_t maxlen, int end_time,
                    int verbose);
+
+void port_close(HANDLE fd);
 
 int time_get(void);
 

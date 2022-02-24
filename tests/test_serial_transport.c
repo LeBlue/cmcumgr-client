@@ -154,6 +154,10 @@ int port_read_poll(HANDLE fd, char *buf, size_t maxlen, int end_time, int verbos
     return -ETIMEDOUT;
 }
 
+void port_close(HANDLE fd)
+{
+    (void)fd;
+}
 
 static struct serial_opts sopts = {
     .port_name = "",

@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <time.h>
-#include <unistd.h>
 #include <assert.h>
 
 #include "utils.h"
@@ -20,9 +19,7 @@
 
 #include "mgmt_hdr.h"
 
-#include "file_reader_unix.h"
 #include "byteordering.h"
-
 
 #include "smp_transport.h"
 #include "serial_port.h"
@@ -92,7 +89,7 @@ void serial_transport_close(struct smp_transport *transport)
 {
     struct smp_serial_handle *hd = get_handle(transport);
 
-    close(hd->port);
+    port_close(hd->port);
 }
 
 

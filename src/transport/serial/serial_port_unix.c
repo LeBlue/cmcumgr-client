@@ -211,6 +211,11 @@ int port_read_poll(int fd, char *buf, size_t maxlen, int end_time, int verbose)
     return rc;
 }
 
+void port_close(HANDLE fd)
+{
+    close(fd);
+}
+
 int time_get(void)
 {
     struct timeval tv;
