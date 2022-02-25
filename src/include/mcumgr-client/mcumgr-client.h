@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef MCUMGR_H
-#define MCUMGR_H
+#ifndef MCUMGR_CLIENT_H
+#define MCUMGR_CLIENT_H
 
 #include <stdint.h>
 #include <stddef.h>
@@ -18,6 +18,9 @@
 #include "mgmt_img.h"
 #include "mgmt_os.h"
 #include "mgmt_utils.h"
+
+#include "cmd_img.h"
+#include "cmd_os.h"
 
 
 /**
@@ -35,9 +38,16 @@
 #define MGMT_ERR_ECORRUPT       9       /* Corrupt */
 #define MGMT_ERR_EPERUSER       256
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* TODO: does this belong here ?*/
 int mgmt_parse_version_string(const char *vbuf, struct image_version *version);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

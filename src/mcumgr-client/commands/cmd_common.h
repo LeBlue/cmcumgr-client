@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "mgmt.h"
+#include "mcumgr-client/mgmt.h"
 
 struct smp_transport;
 

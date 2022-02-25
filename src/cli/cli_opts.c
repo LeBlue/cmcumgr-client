@@ -7,15 +7,18 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <stdbool.h>
+
+#include "cli_opts.h"
+#include "hexlify.h"
+
+#include "mcumgr-client/mcuboot_img.h"
 
 #ifdef __GLIBC__
 #define OPTSTR "+:"
 #else
 #define OPTSTR ":"
 #endif
-
-#include "cli_opts.h"
-#include "hexlify.h"
 
 #ifdef VERSION
 static const char *version = VERSION;

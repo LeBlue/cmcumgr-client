@@ -13,8 +13,8 @@
 #include "ptest/ptest.h"
 #include "utils_test.h"
 
-#include "smp_serial.h"
-#include "smp_transport.h"
+#include "mcumgr-client/smp_serial.h"
+#include "mcumgr-client/smp_transport.h"
 
 /* mock serial port */
 #include "serial_port.h"
@@ -166,9 +166,6 @@ static struct serial_opts sopts = {
 
 static struct smp_transport transport;
 static struct smp_serial_handle serial_handle;
-
-
-#include "smp_transport.h"
 
 void init_serial_transport(void)
 {

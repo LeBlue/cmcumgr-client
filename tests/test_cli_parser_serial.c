@@ -13,7 +13,7 @@
 #include "ptest/ptest.h"
 #include "utils_test.h"
 
-#include "smp_serial.h"
+#include "mcumgr-client/smp_serial.h"
 
 static void test_cli_parse_serial_connstring(void)
 {

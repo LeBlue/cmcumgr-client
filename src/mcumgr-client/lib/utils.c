@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <ctype.h>
 
-#include "utils.h"
+#include "include/utils.h"
 
 
 void vfhexdump(FILE *stream, const void *p, size_t len, const char *fmt, va_list args)

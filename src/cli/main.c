@@ -13,19 +13,13 @@
 #include <assert.h>
 
 #include "utils.h"
-#include "mcumgr.h"
-#include "file_reader_unix.h"
-#include "byteordering.h"
+
+#include "mcumgr-client/mcumgr-client.h"
+#include "mcumgr-client/file_reader_unix.h"
+#include "mcumgr-client/smp_serial.h"
+
 #include "cli_opts.h"
-#include "file_reader.h"
 
-#include "mgmt_img.h"
-
-#include "cmd_img.h"
-#include "cmd_os.h"
-
-#include "smp_serial.h"
-#include "smp_transport.h"
 
 const char *cmdname;
 
