@@ -8,9 +8,8 @@
 #include <errno.h>
 
 #include "cmd_common.h"
-#include "smp_transport.h"
 #include "utils.h"
-
+#include "mcumgr-client/smp_transport.h"
 
 int cmd_run(struct smp_transport *transport, uint8_t *buf, size_t reqsz, size_t bufsz)
 {

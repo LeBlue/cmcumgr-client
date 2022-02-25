@@ -9,7 +9,7 @@
 #include "ptest/ptest.h"
 #include "utils_test.h"
 
-#include "file_reader_unix.h"
+#include "mcumgr-client/file_reader_unix.h"
 
 /* must exist for the test with "Hello World!\n" content */
 static const char *test_file_name = "file_reader_in.txt";

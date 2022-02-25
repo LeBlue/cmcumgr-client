@@ -10,8 +10,8 @@
 #include "utils_test.h"
 
 #include "hexlify.h"
-#include "mgmt_img.h"
-#include "mgmt_utils.h"
+#include "mcumgr-client/mgmt_img.h"
+#include "mcumgr-client/mgmt_utils.h"
 
 static void test_slot_flags_active(void)
 {

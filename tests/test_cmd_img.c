@@ -15,13 +15,12 @@
 #include "utils_test.h"
 #include "mock_transport.h"
 
-#include "smp_transport.h"
+#include "mcumgr-client/smp_transport.h"
 
 #define MOCK_BUF_SZ 2048
 #define MAX_CHUNKS 20
 
-#include "mcumgr.h"
-#include "cmd_img.h"
+#include "mcumgr-client/mcumgr-client.h"
 
 static const uint8_t slot_state[] =
                             "\x01\x00\x00\xe3\x00\x01\x00\x00"

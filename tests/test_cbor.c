@@ -18,7 +18,7 @@
 #include "ptest/ptest.h"
 #include "utils_test.h"
 
-#include "mcumgr.h"
+#include "mcumgr-client/mcumgr-client.h"
 
 /* test internal API */
 #include "mgmt_hdr.h"

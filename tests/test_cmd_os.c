@@ -15,15 +15,10 @@
 #include "utils_test.h"
 #include "mock_transport.h"
 
-#include "smp_transport.h"
-
 #define MOCK_BUF_SZ 2048
 #define MAX_CHUNKS 20
 
-
-#include "cmd_os.h"
-#include "cmd_img.h"
-#include "mcumgr.h"
+#include "mcumgr-client/mcumgr-client.h"
 
 static void test_cmd_os_reset(void)
 {

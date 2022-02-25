@@ -9,10 +9,10 @@
 
 #include "cbor.h"
 
-#include "mgmt.h"
 #include "mgmt_common.h"
 #include "mgmt_hdr.h"
-#include "mgmt_os.h"
+#include "mcumgr-client/mgmt.h"
+#include "mcumgr-client/mgmt_os.h"
 
 ssize_t mgmt_create_os_echo_req(uint8_t *buf, size_t sz, const struct mgmt_echo_req *req)
 {

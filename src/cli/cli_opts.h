@@ -6,7 +6,8 @@
 #ifndef CLI_OPTS_H
 #define CLI_OPTS_H
 
-#include "mcumgr.h"
+#include "mcumgr-client/mgmt_img.h"
+#include "mcumgr-client/mgmt_os.h"
 
 typedef enum subcommand {
     CMD_NONE = 0,

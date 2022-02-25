@@ -21,9 +21,9 @@
 
 #include "byteordering.h"
 
-#include "smp_transport.h"
+#include "mcumgr-client/smp_transport.h"
 #include "serial_port.h"
-#include "smp_serial.h"
+#include "mcumgr-client/smp_serial.h"
 
 #define PRDBG 0
 #if PRDBG
@@ -402,8 +402,6 @@ static int serial_transport_read(struct smp_transport *transport, uint8_t *buf, 
     return rc;
 }
 
-
-#include "smp_transport.h"
 static const struct smp_operations serial_transport_ops = {
     .open = serial_transport_connect,
     .read = serial_transport_read,

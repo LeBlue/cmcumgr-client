@@ -22,7 +22,7 @@
 #include <sys/types.h>
 #include <sysinfoapi.h>
 
-#include "serial_upload.h"
+#include "serial_port.h"
 
 #ifdef __MINGW32__
 #define GetTickCount64 GetTickCount

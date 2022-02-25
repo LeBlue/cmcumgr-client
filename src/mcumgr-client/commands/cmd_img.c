@@ -13,11 +13,11 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include "cmd_img.h"
-#include "mgmt_img.h"
+#include "mcumgr-client/cmd_img.h"
+#include "mcumgr-client/mgmt_img.h"
 #include "mgmt_hdr.h"
 
-#include "smp_transport.h"
+#include "mcumgr-client/smp_transport.h"
 #include "utils.h"
 #include "cmd_common.h"
 

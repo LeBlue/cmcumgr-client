@@ -43,7 +43,7 @@
 
 #include <stdio.h>
 
-#include "base64.h"
+#include "include/base64.h"
 
 static const char base64_chars[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

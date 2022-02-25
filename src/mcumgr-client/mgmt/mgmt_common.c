@@ -6,9 +6,11 @@
 #include <stdint.h>
 #include <errno.h>
 
-#include "cbor.h"
-#include "mcumgr.h"
+#include "mgmt_common.h"
+
+#include "mcumgr-client/mcumgr-client.h"
 #include "mgmt_hdr.h"
+
 #include "byteordering.h"
 
 void mgmt_cbor_encoder_init(CborEncoder *enc, uint8_t *buf, size_t sz)

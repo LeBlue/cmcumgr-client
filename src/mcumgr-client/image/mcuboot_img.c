@@ -7,8 +7,8 @@
 #include <errno.h>
 
 #include "byteordering.h"
-#include "mcuboot_img.h"
-#include "file_reader.h"
+#include "mcumgr-client/mcuboot_img.h"
+#include "mcumgr-client/file_reader.h"
 
 #define IMAGE_MAGIC                 0x96f3b83d
 

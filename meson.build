@@ -1,5 +1,5 @@
 
-project('mcumgr-uart', 'c',
+project('mcumgr-client', 'c',
     version: '0.1.0',
     default_options: [
             'c_std=gnu99',
@@ -72,102 +72,17 @@ config_h = configure_file(
 )
 add_project_arguments('-include', 'config.h', language : 'c')
 
-src_lib = [
-    'src/lib/base64.c',
-    'src/lib/crc16.c',
-    'src/lib/hexlify.c',
-    'src/lib/utils.c',
-]
+subdir('src'/'mcumgr-client')
 
-utils = static_library(
-    'utils',
-    sources: src_lib,
-    include_directories: 'src/lib/include',
-)
-
-utils_dep = declare_dependency(
-    link_with: utils,
-    include_directories: include_directories('src/lib/include'),
-)
-
-src_cbor = [
-    'src/mcumgr/tinycbor/src/cborparser.c',
-    'src/mcumgr/tinycbor/src/cborencoder.c',
-]
-
-libcbor = static_library(
-    'cbor',
-    sources: src_cbor,
-    include_directories: [ 'src/mcumgr/tinycbor/src' ],
-    c_args: '-Wno-implicit-fallthrough', # silence fallthroug warning in tinycbor lib
-)
-
-cbor_dep = declare_dependency(
-    link_with: libcbor,
-    include_directories: [ 'src/mcumgr/tinycbor/src' ],
-)
-
-src_mcumgr = [
-    'src/mcumgr/mgmt_common.c',
-    'src/mcumgr/mgmt_utils.c',
-    'src/mcumgr/mgmt_hdr.c',
-    'src/mcumgr/mgmt_img.c',
-    'src/mcumgr/mgmt_os.c',
-    'src/mcuboot_img.c',
-    'src/commands/cmd_common.c',
-    'src/commands/cmd_os.c',
-    'src/commands/cmd_img.c',
-    'src/transport/serial/smp_serial.c',
-]
-
-libmcumgr = static_library(
-    'mcumgr-client',
-    sources: src_mcumgr,
-    dependencies: [ utils_dep, cbor_dep ],
-    include_directories: [
-        'src/lib/include',
-        'src/include',
-        'src/mcumgr',
-        'src/mcumgr/tinycbor/src',
-        'src/transport',
-        'src'
-    ],
-    c_args: common_cc_flags
-)
-
-mcumgr_dep = declare_dependency(
-    link_with: libmcumgr,
-    include_directories: ['src', 'src/include', 'src/mcumgr', 'src/transport', 'src/commands'],
-)
-
-
-prefixdir = get_option('prefix')
-bindir = prefixdir / get_option('bindir')
-
-src_cli = [
-    'src/main.c',
-    'src/cli_opts.c',
-    'src/file_reader_unix.c',
-    'src/transport/serial/serial_opts.c',
-    'src/transport/serial/serial_port_unix.c',
-
-]
-
-mcumgr = executable('mcumgr',
-    sources: src_cli,
-    include_directories : [],
-    dependencies: [ mcumgr_dep, utils_dep ],
-    install : true,
-    install_dir : bindir,
-    c_args: common_cc_flags,
-)
-
+if get_option('enable-cli')
+    subdir('src'/'cli')
+endif
 
 if get_option('enable-tests') == true
 
     ptest = static_library(
         'ptest',
-        sources: 'tests/ptest/ptest.c',
+        sources: 'tests'/'ptest'/'ptest.c',
         c_args: [ '-Wno-unused-argument', '-Wno-sign-compare', '-Wno-unused-parameter' ], # silence warning in lib
     )
 
@@ -175,74 +90,109 @@ if get_option('enable-tests') == true
         link_with: [ ptest, utils ]
     )
 
+    dir_mcumgr = 'src'/'mcumgr-client'
+    inc_mcumgr = 'src'/'include'
+    dir_cli = 'src'/'cli'
+
     test_file_reader_unix = executable('test-file-reader-unix',
-        sources: [ 'tests/test_file_reader.c', 'src/file_reader_unix.c' ],
-        include_directories : 'src',
+        sources: [
+            'tests'/'test_file_reader.c',
+            join_paths(dir_mcumgr, 'image'/'file_reader_unix.c'),
+        ],
+        include_directories : [inc_mcumgr],
         dependencies: [ ptest_dep, utils_dep ],
         c_args: common_cc_flags,
     )
-    configure_file(copy: true, input: 'tests/file_reader_in.txt', output: 'file_reader_in.txt')
+    configure_file(copy: true, input: 'tests'/'file_reader_in.txt', output: 'file_reader_in.txt')
     test('test-file-reader-unix', test_file_reader_unix)
 
     test_mcuboot_img_parser_int = executable('test-mcuboot-img-parser-internal',
-        sources: [ 'tests/test_mcuboot_img_internal.c', 'src/file_reader_unix.c'],
-        include_directories : [ 'src', 'src/include' ],
+        sources: [
+            'tests'/'test_mcuboot_img_internal.c',
+            join_paths(dir_mcumgr, 'image'/'file_reader_unix.c'),
+        ],
+        include_directories : [ inc_mcumgr, 'src'/'mcumgr-client'/'image' ],
         dependencies: [ ptest_dep, utils_dep ],
         c_args: common_cc_flags,
     )
     test('test-mcuboot-image-parser-internal', test_mcuboot_img_parser_int)
 
     test_mcuboot_img_parser = executable('test-mcuboot-img-parser',
-        sources: [ 'tests/test_mcuboot_img.c', 'src/file_reader_unix.c', 'src/mcuboot_img.c'],
-        include_directories : [ 'src', 'src/include' ],
+        sources: [
+            'tests'/'test_mcuboot_img.c',
+            join_paths(dir_mcumgr, 'image'/'file_reader_unix.c'),
+            join_paths(dir_mcumgr, 'image'/'mcuboot_img.c'),
+        ],
+        include_directories : [ inc_mcumgr ],
         dependencies: [ ptest_dep, utils_dep ],
         c_args: common_cc_flags,
     )
-    configure_file(copy: true, input: 'tests/mcuboot_image.bin', output: 'mcuboot_image.bin')
-    configure_file(copy: true, input: 'tests/mcuboot_image_trunc_1.bin', output: 'mcuboot_image_trunc_1.bin')
+    configure_file(copy: true, input: 'tests'/'mcuboot_image.bin', output: 'mcuboot_image.bin')
+    configure_file(copy: true, input: 'tests'/'mcuboot_image_trunc_1.bin', output: 'mcuboot_image_trunc_1.bin')
     test('test-mcuboot-image-parser', test_mcuboot_img_parser)
 
     test_cbor = executable('test-cbor',
-        sources: [ 'tests/test_cbor.c' ],
+        sources: [ 'tests'/'test_cbor.c' ],
         dependencies: [ ptest_dep, utils_dep, mcumgr_dep ],
         c_args: common_cc_flags,
+        include_directories: [ join_paths(dir_mcumgr, 'mgmt')]
     )
     test('test-cbor', test_cbor)
 
     test_cli_parser = executable('test-cli-parser',
-        sources: [ 'tests/test_cli_parser.c', 'src/cli_opts.c', 'src/mcumgr/mgmt_utils.c' ],
-        include_directories : ['src', 'src/mcumgr', 'src/include'],
+        sources: [
+            'tests'/'test_cli_parser.c',
+            join_paths(dir_cli, 'cli_opts.c'),
+            join_paths(dir_mcumgr, 'mgmt'/'mgmt_utils.c'),
+        ],
+        include_directories : [inc_mcumgr, dir_cli ],
         dependencies: [ ptest_dep, utils_dep ],
         c_args: common_cc_flags,
     )
     test('test-cli-parser', test_cli_parser)
 
     test_serial_transport = executable('test-serial-transport',
-        sources: [ 'tests/test_serial_transport.c', 'src/mcumgr/mgmt_hdr.c', 'src/transport/serial/smp_serial.c' ],
-        include_directories : [ 'src', 'src/mcumgr', 'src/transport', 'src/transport/serial' ],
+        sources: [
+            'tests/test_serial_transport.c',
+            join_paths(dir_mcumgr, 'mgmt'/'mgmt_hdr.c'),
+            join_paths(dir_mcumgr, 'transport'/'serial'/'smp_serial.c')
+        ],
+        include_directories : [
+            inc_mcumgr,
+            join_paths(dir_mcumgr, 'mgmt'),
+            join_paths(dir_mcumgr, 'transport'/'serial')
+        ],
         dependencies: [ ptest_dep, utils_dep ],
         c_args: common_cc_flags,
     )
     test('test-serial-transport', test_serial_transport)
 
     test_cli_parser_serial = executable('test-cli-parser-serial',
-        sources: [ 'tests/test_cli_parser_serial.c', 'src/transport/serial/serial_opts.c' ],
-        include_directories : ['src', 'src/transport',],
+        sources: [
+            'tests/test_cli_parser_serial.c',
+            join_paths(dir_mcumgr, 'transport'/'serial'/'serial_opts.c'),
+        ],
+        include_directories : [inc_mcumgr],
         dependencies: [ ptest_dep, utils_dep ],
         c_args: common_cc_flags,
     )
     test('test-cli-parser-serial', test_cli_parser_serial)
 
     test_mgmt_utils = executable('test-mgmt-utils',
-        sources: [ 'tests/test_mgmt_utils.c', 'src/mcumgr/mgmt_utils.c', 'src/lib/hexlify.c' ],
-        include_directories : [ 'src', 'src/include', 'src/mcumgr', 'src/transport/serial', 'src/lib/include' ],
+        sources: [
+            'tests'/'test_mgmt_utils.c',
+            join_paths(dir_mcumgr, 'mgmt'/'mgmt_utils.c'),
+            join_paths(dir_mcumgr, 'lib'/'hexlify.c'),
+        ],
+        # include_directories : [ 'src', 'src/include', 'src/mcumgr', 'src/transport/serial', 'src/lib/include' ],
+        include_directories: [inc_mcumgr],
         dependencies: [ ptest_dep, utils_dep ],
         c_args: common_cc_flags,
     )
     test('test-mgmt-utils', test_mgmt_utils)
 
     test_mgmt_img_upload = executable('test-mgmt-img-upload',
-        sources: [ 'tests/test_mgmt_img_upload.c' ],
+        sources: [ 'tests'/'test_mgmt_img_upload.c' ],
         dependencies: [ ptest_dep, utils_dep, mcumgr_dep ],
         c_args: common_cc_flags,
     )
@@ -250,9 +200,9 @@ if get_option('enable-tests') == true
 
     mock_transport = static_library(
         'mock_transport',
-        sources: 'tests/mock_transport.c',
+        sources: 'tests'/'mock_transport.c',
         dependencies: [ utils_dep ],
-        include_directories: ['src/transport'],
+        include_directories: [inc_mcumgr],
         c_args: common_cc_flags,
     )
 
@@ -261,14 +211,14 @@ if get_option('enable-tests') == true
     )
 
     test_cmd_os = executable('test-cmd-os',
-        sources: [ 'tests/test_cmd_os.c' ],
+        sources: [ 'tests'/'test_cmd_os.c' ],
         dependencies: [ ptest_dep, utils_dep, mcumgr_dep, mock_transport_dep ],
         c_args: common_cc_flags,
     )
     test('test-cmd-os', test_cmd_os)
 
     test_cmd_img = executable('test-cmd-img',
-        sources: [ 'tests/test_cmd_img.c' ],
+        sources: [ 'tests'/'test_cmd_img.c' ],
         dependencies: [ ptest_dep, utils_dep, mcumgr_dep, mock_transport_dep ],
         c_args: common_cc_flags,
     )
