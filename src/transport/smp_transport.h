@@ -18,6 +18,7 @@ typedef int (*transport_connect_fn)(struct smp_transport* fh);
 typedef int (*transport_read_fn)(struct smp_transport* fh, uint8_t *buf, size_t sz);
 typedef int (*transport_write_fn)(struct smp_transport* fh, uint8_t *buf, size_t sz);
 typedef void (*transport_close_fn)(struct smp_transport* fh);
+typedef int (*transport_get_mtu_fn)(struct smp_transport* t);
 
 
 struct smp_operations {
@@ -26,6 +27,7 @@ struct smp_operations {
     transport_read_fn read;
     transport_write_fn write;
     transport_close_fn close;
+    transport_get_mtu_fn get_mtu;
 };
 
 struct smp_transport {
