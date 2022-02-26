@@ -402,11 +402,18 @@ static int serial_transport_read(struct smp_transport *transport, uint8_t *buf, 
     return rc;
 }
 
+static int serial_transport_get_mtu(struct smp_transport *t)
+{
+    (void)t;
+    return 256;
+}
+
 static const struct smp_operations serial_transport_ops = {
     .open = serial_transport_connect,
     .read = serial_transport_read,
     .write = serial_transport_write,
     .close = serial_transport_close,
+    .get_mtu = serial_transport_get_mtu,
 };
 
 
