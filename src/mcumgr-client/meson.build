@@ -53,6 +53,13 @@ if get_option('enable-serial')
     src_mcumgr += 'transport'/'serial'/'smp_serial.c'
     src_mcumgr += 'transport'/'serial'/'serial_port_unix.c'
 endif
+if get_option('enable-ble')
+    src_mcumgr += 'transport'/'ble'/'sd-bluez'/'smp_sd_bluez.c'
+    src_mcumgr += 'transport'/'ble'/'sd-bluez'/'smp_sd_bluez_fd.c'
+    src_mcumgr += 'transport'/'ble'/'sd-bluez'/'smp_sd_bluez_dbus.c'
+    sdbus = dependency('libsystemd', version: '>=240', required: true)
+    mcumgr_deps += sdbus
+endif
 
 mcumgr_lib_name = 'cmcumgr-client'
 
