@@ -17,13 +17,9 @@
 #include "mcumgr-client/mcumgr-client.h"
 #include "mcumgr-client/file_reader_unix.h"
 #include "mcumgr-client/smp_serial.h"
+#include "mcumgr-client/smp_sd_bluez.h"
 
 #include "cli_opts.h"
-
-
-const char *cmdname;
-
-
 
 void print_usage_or_error(struct cli_options *copts, int rc)
 {
@@ -372,8 +368,10 @@ main(int argc, char **argv)
 
     struct cli_options copts;
     struct serial_opts sopts;
+    struct sd_bluez_opts bopts;
     struct smp_transport transport = {0};
     struct smp_serial_handle serial_handle;
+    struct smp_sd_bluez_handle sd_bluez_handle;
 
 
     rc = parse_cli_options(argc, argv, &copts);
@@ -386,16 +384,34 @@ main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    if (copts.connstring) {
-        if (parse_serial_connstring(copts.connstring, &sopts)) {
-            fprintf(stderr, "Failed to parse connstring: %s\n", copts.connstring);
-            exit(EXIT_FAILURE);
-        }
+    if (copts.conntype) {
+        if (!strcmp("serial", copts.conntype)) {
+            if (copts.connstring) {
+                if (parse_serial_connstring(copts.connstring, &sopts)) {
+                    fprintf(stderr, "Failed to parse connstring: %s\n", copts.connstring);
+                    exit(EXIT_FAILURE);
+                }
 
-        if (serial_transport_init(&transport, &serial_handle, &sopts)) {
-            fprintf(stderr, "Failed to init transport\n");
-            exit(EXIT_FAILURE);
+                if (serial_transport_init(&transport, &serial_handle, &sopts)) {
+                    fprintf(stderr, "Failed to init transport\n");
+                    exit(EXIT_FAILURE);
+                }
+            }
+        } else if (!strcmp("ble", copts.conntype)) {
+            if (copts.connstring) {
+                if (parse_sd_bluez_connstring(copts.connstring, &bopts)) {
+                    fprintf(stderr, "Failed to parse connstring: %s\n", copts.connstring);
+                    exit(EXIT_FAILURE);
+                }
+
+                if (sd_bluez_transport_init(&transport, &sd_bluez_handle, &bopts)) {
+                    fprintf(stderr, "Failed to init transport\n");
+                    exit(EXIT_FAILURE);
+                }
+            }
         }
+    }
+    if (transport.ops) {
         if (transport.ops->open(&transport)) {
             fprintf(stderr, "Failed to open transport\n");
             rc = EXIT_FAILURE;

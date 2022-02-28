@@ -9,6 +9,9 @@ src_cli = [
 if get_option('enable-serial')
     src_cli += '..'/'mcumgr-client'/'transport'/'serial'/'serial_opts.c'
 endif
+if get_option('enable-ble')
+    src_cli += '..'/'mcumgr-client'/'transport'/'ble'/'sd-bluez'/'sd_bluez_opts.c'
+endif
 
 mcumgr = executable('cmcumgr',
     sources: src_cli,
