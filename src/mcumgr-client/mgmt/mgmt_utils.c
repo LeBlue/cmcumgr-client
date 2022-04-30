@@ -26,7 +26,7 @@ int image_version_to_str(char *vbuf, const struct image_version *version)
 
 
     if (ret > 0 && ret < (int) IMAGE_VERSION_STR_MAX && version->build_num) {
-        snprintf(vbuf + ret , IMAGE_VERSION_STR_MAX - ret, "+%d", version->build_num);
+        snprintf(vbuf + ret , IMAGE_VERSION_STR_MAX - ret, "+%u", version->build_num);
     }
     vbuf[IMAGE_VERSION_STR_MAX - 1] = '\0';
 
