@@ -168,7 +168,7 @@ int mgmt_parse_version_string(const char *vbuf, struct image_version *version)
 			case '\0':
 				return 0;
 			case '.':
-				if (i >= 2) {
+				if (i >= 3) {
 					return -EINVAL;
 				}
 				break;
