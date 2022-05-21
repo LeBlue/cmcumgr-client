@@ -364,8 +364,13 @@ static void test_smp_serial_read_chunked_unaligned(void)
 }
 
 
-static void test_smp_serial_read_fragmented(void)
+static void test_smp_serial_read_split_packet(void)
 {
+    /* split packet means multiple smp_serial packets (splitting on the transport layer, not smp layer)
+
+        It contains here a single mcumgr frame, NOT a mcumgr fragmented packet
+
+    */
     /* make transport receive this */
     const uint8_t rx_enc_data1[127] = "\x06\x09"
                                       "AHMDAABpAAAAAKFhcnhkMTIzNDU2Nzg5"
@@ -378,7 +383,9 @@ static void test_smp_serial_read_fragmented(void)
                                      "OTAxMjM0"
                                      "NTY3ODkwMTIzNDU2Nzg5MKkq"
                                      "\n";
-    /* should be decoded to this */
+    /* should be decoded to this:
+        echo response, with string '1234567890' * 10
+    */
     const uint8_t exp_rx_data[113] = "\x03\x00\x00\x69\x00\x00\x00\x00"
                                     "\xa1" "arxd"
                                     "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
@@ -411,7 +418,7 @@ static void suite_smp_serial(void)
     pt_add_test(test_smp_serial_read_garbage_before, "Serial port read: garbage before: MGMT RC", sn);
     pt_add_test(test_smp_serial_read_chunked, "Serial port read: chunked: MGMT RC", sn);
     pt_add_test(test_smp_serial_read_chunked_unaligned, "Serial port read: chunked unaligned: MGMT RC", sn);
-    pt_add_test(test_smp_serial_read_fragmented, "Serial port read: fragmented: MGMT RC", sn);
+    pt_add_test(test_smp_serial_read_split_packet, "Serial port read: split packet: MGMT RC", sn);
 }
 
 int main(int argc, char** argv)
