@@ -685,12 +685,16 @@ static void test_mgmt_parse_version_str_fail_fmt_early_plus(void)
 }
 
 
-static void test_mgmt_parse_version_str_fail_fmt_all_dot(void)
+static void test_mgmt_parse_version_str_fmt_all_dot(void)
 {
     const char vbuf[] = "0.1.1.1";
     struct image_version version;
     int ret = mgmt_parse_version_string(vbuf, &version);
-    PT_ASSERT(ret == -EINVAL);
+    PT_ASSERT(ret == 0);
+    PT_ASSERT(version.major == 0);
+    PT_ASSERT(version.minor == 1);
+    PT_ASSERT(version.revision == 1);
+    PT_ASSERT(version.build_num == 1);
 }
 
 
@@ -719,7 +723,7 @@ void suite_mgmt_img_parse_version(void)
     pt_add_test(test_mgmt_parse_version_str_fail_fmt_rev, "Test version: Format: Revision overflow", sn);
     pt_add_test(test_mgmt_parse_version_str_fail_fmt_build_num, "Test version: Format: Build Num overflow", sn);
     pt_add_test(test_mgmt_parse_version_str_fail_fmt_early_plus, "Test version: Format: Plus early", sn);
-    pt_add_test(test_mgmt_parse_version_str_fail_fmt_all_dot, "Test version: Format: all dots", sn);
+    pt_add_test(test_mgmt_parse_version_str_fmt_all_dot, "Test version: Format: all dots", sn);
     // pt_add_test(test_mgmt_parse_version_str_fail_fmt_leading_zero, "Test version: Format: leading zero", sn);
 }
 
