@@ -144,6 +144,7 @@ int port_read_poll(HANDLE fd, char *buf, size_t maxlen, int end_time, int verbos
         if (chunk > 0) {
             if (chunk > maxlen) {
                 chunk = maxlen;
+                serial_state.chunk_len[serial_state.chunk] -= maxlen;
             } else {
                 serial_state.chunk++;
             }
