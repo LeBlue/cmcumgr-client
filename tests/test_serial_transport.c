@@ -41,6 +41,8 @@ struct serial_mock_state {
     /* data that is written to port */
     uint8_t tx_buf[MOCK_BUF_SZ];
     size_t tx_off;
+    /* option to always return only one bytes (single step) */
+    bool single_bytes;
 };
 
 static struct serial_mock_state serial_state = {0};
@@ -48,9 +50,12 @@ static int current_time = 0;
 
 int time_get(void)
 {
-    /* 200 ms per call */
-    current_time += 100;
-
+    /* 100 ms per call */
+    if (serial_state.single_bytes) {
+        current_time += 1;
+    } else {
+        current_time += 100;
+    }
     return current_time/1000;
 }
 
@@ -58,6 +63,20 @@ void mock_serial_port_init(void)
 {
     current_time = 0;
     memset(&serial_state, 0, sizeof(serial_state));
+}
+
+void mock_serial_port_rewind(void)
+{
+    serial_state.chunk = 0;
+    serial_state.rx_off = 0;
+    serial_state.tx_off = 0;
+    memset(&serial_state.tx_buf, 0, sizeof(serial_state.tx_buf));
+}
+
+void mock_serial_port_rewind_rx_single(void)
+{
+    mock_serial_port_rewind();
+    serial_state.single_bytes = true;
 }
 
 /* avoid discards const warnings, need additional space also (crc): TODO: fix impl */
@@ -174,6 +193,16 @@ int port_read_poll(HANDLE fd, char *buf, size_t maxlen, int end_time, int verbos
             return -ETIMEDOUT;
         }
 
+        if (serial_state.single_bytes) {
+            if (serial_state.rx_size == serial_state.rx_off) {
+                return -ETIMEDOUT;
+            } else {
+                buf[0] = serial_state.rx_buf[serial_state.rx_off];
+                ++serial_state.rx_off;
+                return 1;
+            }
+        }
+
         /* no more data setup to read */
         if (serial_state.chunk > serial_state.n_chunks) {
             /* since original API waits until something rxed, simulate a timeout */
@@ -278,13 +307,26 @@ static void test_smp_serial_read(void)
     mock_add_rx_chunk(rx_enc_data, sizeof(rx_enc_data));
 
     uint8_t rbuf[128];
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
     PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(exp_rx_data));
+    PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+
+
 }
 
 
@@ -302,9 +344,20 @@ static void test_smp_serial_read_wrong_pktlen(void)
     mock_add_rx_chunk(rx_enc_data, sizeof(rx_enc_data));
 
     uint8_t rbuf[128];
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(exp_rx_data));
+    PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
@@ -320,12 +373,22 @@ static void test_smp_serial_read_timeout(void)
 
     mock_serial_port_init();
 
-    mock_add_rx_chunk(rx_enc_data, sizeof(rx_enc_data));
+    RX_CHUNK(rx_enc_data);
 
     uint8_t rbuf[128];
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == -ETIMEDOUT);
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == -ETIMEDOUT);
     PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
@@ -347,14 +410,25 @@ static void test_smp_serial_read_garbage_before(void)
     mock_serial_port_init();
 
     /* add rx data to mock */
-    mock_add_rx_chunk(garbage1, sizeof(garbage1));
-    mock_add_rx_chunk(garbage2, sizeof(garbage2));
-    mock_add_rx_chunk(rx_enc_data, sizeof(rx_enc_data));
+    RX_CHUNK(garbage1);
+    RX_CHUNK(garbage2);
+    RX_CHUNK(rx_enc_data);
 
     uint8_t rbuf[128];
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(exp_rx_data));
+    PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
@@ -381,9 +455,20 @@ static void test_smp_serial_read_chunked(void)
     mock_add_rx_chunk(rx_enc_data + chunk1 + chunk2, sizeof(rx_enc_data) - (chunk1 + chunk2));
 
     uint8_t rbuf[128];
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(exp_rx_data));
+    PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
@@ -412,9 +497,20 @@ static void test_smp_serial_read_chunked_unaligned(void)
     mock_add_rx_chunk(rx_enc_data + chunk1 + chunk2, sizeof(rx_enc_data) - (chunk1 + chunk2));
 
     uint8_t rbuf[128];
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(exp_rx_data));
+    PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
@@ -451,16 +547,26 @@ static void test_smp_serial_read_split_packet(void)
 
     mock_serial_port_init();
 
-    mock_add_rx_chunk(rx_enc_data1, sizeof(rx_enc_data1));
-    mock_add_rx_chunk(rx_enc_data2, sizeof(rx_enc_data2));
+    RX_CHUNK(rx_enc_data1);
+    RX_CHUNK(rx_enc_data2);
 
     uint8_t rbuf[128];
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
+    PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(exp_rx_data));
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
     PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
@@ -492,14 +598,25 @@ static void test_smp_serial_read_chunked_packet(void)
     RX_CHUNK(chunk_0_0);
 
     uint8_t rbuf[128];
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
-
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
     PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(exp_rx_data));
+    PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+
 }
 
 static void test_smp_serial_read_chunked_packet_2(void)
@@ -544,11 +661,21 @@ static void test_smp_serial_read_chunked_packet_2(void)
     RX_CHUNK(chunk_0_1);
 
     uint8_t rbuf[140];
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf));
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
+    PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(exp_rx_data));
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
     PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
@@ -601,13 +728,23 @@ static void test_smp_serial_read_pkt_just_enough(void)
     RX_CHUNK(smp2big_chunk_0_1);
 
     uint8_t rbuf[251]; /* make big for copy+paste test */
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
 
-    int rc = transport.ops->read(&transport, rbuf, buflen);
+    rc = transport.ops->read(&transport, rbuf, buflen);
 
     PT_ASSERT(rc == sizeof(smp2big_exp_rx_data));
     PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
+    PT_ASSERT_MEM_EQ(smp2big_exp_rx_data, rbuf, sizeof(smp2big_exp_rx_data));
 
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
+
+    rc = transport.ops->read(&transport, rbuf, buflen);
+
+    PT_ASSERT(rc == sizeof(smp2big_exp_rx_data));
+    PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
     PT_ASSERT_MEM_EQ(smp2big_exp_rx_data, rbuf, sizeof(smp2big_exp_rx_data));
 }
 
@@ -623,14 +760,24 @@ static void test_smp_serial_read_pkt_too_big_1(void)
     RX_CHUNK(smp2big_chunk_0_1);
 
     uint8_t rbuf[251]; /* make big for copy+paste test */
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
 
-    int rc = transport.ops->read(&transport, rbuf, buflen);
+    rc = transport.ops->read(&transport, rbuf, buflen);
 
     PT_ASSERT(rc != 0);
     PT_ASSERT(rc == -ENOBUFS);
     PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
-    (void)smp2big_exp_rx_data;
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
+
+    rc = transport.ops->read(&transport, rbuf, buflen);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
 }
 
 
@@ -645,14 +792,24 @@ static void test_smp_serial_read_pkt_too_big_oneless(void)
     RX_CHUNK(smp2big_chunk_0_1);
 
     uint8_t rbuf[251]; /* make big for copy+paste test */
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
 
-    int rc = transport.ops->read(&transport, rbuf, buflen);
+    rc = transport.ops->read(&transport, rbuf, buflen);
 
     PT_ASSERT(rc != 0);
     PT_ASSERT(rc == -ENOBUFS);
     PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
-    (void)smp2big_exp_rx_data;
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
+
+    rc = transport.ops->read(&transport, rbuf, buflen);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
 }
 
 
@@ -667,14 +824,24 @@ static void test_smp_serial_read_pkt_too_big_data_1_chunk_0(void)
     RX_CHUNK(smp2big_chunk_0_1);
 
     uint8_t rbuf[251]; /* make big for copy+paste test */
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
 
-    int rc = transport.ops->read(&transport, rbuf, buflen);
+    rc = transport.ops->read(&transport, rbuf, buflen);
 
     PT_ASSERT(rc != 0);
     PT_ASSERT(rc == -ENOBUFS);
     PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
-    (void)smp2big_exp_rx_data;
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
+
+    rc = transport.ops->read(&transport, rbuf, buflen);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
 }
 
 
@@ -689,14 +856,24 @@ static void test_smp_serial_read_pkt_too_big_data_chunk_0(void)
     RX_CHUNK(smp2big_chunk_0_1);
 
     uint8_t rbuf[251]; /* make big for copy+paste test */
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
 
-    int rc = transport.ops->read(&transport, rbuf, buflen);
+    rc = transport.ops->read(&transport, rbuf, buflen);
 
     PT_ASSERT(rc != 0);
     PT_ASSERT(rc == -ENOBUFS);
     PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
-    (void)smp2big_exp_rx_data;
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
+
+    rc = transport.ops->read(&transport, rbuf, buflen);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
 }
 
 
@@ -711,14 +888,24 @@ static void test_smp_serial_read_pkt_too_big_data_1_chunk_1(void)
     RX_CHUNK(smp2big_chunk_0_1);
 
     uint8_t rbuf[251]; /* make big for copy+paste test */
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
 
-    int rc = transport.ops->read(&transport, rbuf, buflen);
+    rc = transport.ops->read(&transport, rbuf, buflen);
 
     PT_ASSERT(rc != 0);
     PT_ASSERT(rc == -ENOBUFS);
     PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
-    (void)smp2big_exp_rx_data;
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
+
+    rc = transport.ops->read(&transport, rbuf, buflen);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
 }
 
 
@@ -733,14 +920,24 @@ static void test_smp_serial_read_pkt_too_big_data_chunk_1(void)
     RX_CHUNK(smp2big_chunk_0_1);
 
     uint8_t rbuf[251]; /* make big for copy+paste test */
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
 
-    int rc = transport.ops->read(&transport, rbuf, buflen);
+    rc = transport.ops->read(&transport, rbuf, buflen);
 
     PT_ASSERT(rc != 0);
     PT_ASSERT(rc == -ENOBUFS);
     PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
-    (void)smp2big_exp_rx_data;
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
+
+    rc = transport.ops->read(&transport, rbuf, buflen);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
 }
 
 
@@ -785,14 +982,25 @@ static void test_smp_serial_read_pkt_too_big_2(void)
     RX_CHUNK(chunk_0_1);
 
     uint8_t rbuf[sizeof(exp_rx_data)];
+    int rc;
     memset(rbuf, 0xaa, sizeof(exp_rx_data));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc != 0);
     PT_ASSERT(rc == -ENOBUFS);
     PT_ASSERT(rbuf[sizeof(exp_rx_data) - 1] == 0xaa);
-    (void)exp_rx_data;
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(exp_rx_data));
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[sizeof(exp_rx_data) - 1] == 0xaa);
+
 }
 
 
@@ -851,14 +1059,24 @@ static void test_smp_serial_read_pkt_too_big_fragmented(void)
     RX_CHUNK(frag_chunk_1_0);
 
     uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1 - 1];
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc != 0);
     PT_ASSERT(rc == -ENOBUFS);
     PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
-    (void)frag_exp_rx_data;
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
 static void test_smp_serial_read_fragmented_pkt_chunked(void)
@@ -871,9 +1089,21 @@ static void test_smp_serial_read_fragmented_pkt_chunked(void)
     RX_CHUNK(frag_chunk_1_0);
 
     uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1];
+    int rc;
+
     memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(frag_exp_rx_data));
+    PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(frag_exp_rx_data));
     PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
@@ -897,9 +1127,20 @@ static void test_smp_serial_read_fragmented_pkt_chunked_split_read_1(void)
     RX_CHUNK_RESPLIT(rxsplit);
 
     uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1];
+    int rc;
+
     memset(rbuf, 0xaa, sizeof(rbuf));
-    transport.verbose = TRANSPORT_VERBOSE;
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(frag_exp_rx_data));
+    PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(frag_exp_rx_data));
     PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
@@ -926,9 +1167,19 @@ static void test_smp_serial_read_fragmented_pkt_chunked_split_read_1_wlog(void)
     RX_CHUNK_RESPLIT(rxsplit);
 
     uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1];
+    int rc;
+
     memset(rbuf, 0xaa, sizeof(rbuf));
-    transport.verbose = TRANSPORT_VERBOSE;
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(frag_exp_rx_data));
+    PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(frag_exp_rx_data));
     PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
@@ -952,13 +1203,22 @@ static void test_smp_serial_read_fragmented_pkt_chunked_split_read_2(void)
     RX_CHUNK_RESPLIT(rxsplit);
 
     uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1];
+    int rc;
+
     memset(rbuf, 0xaa, sizeof(rbuf));
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(frag_exp_rx_data));
-
     PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(frag_exp_rx_data));
+    PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
     PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
@@ -983,13 +1243,23 @@ static void test_smp_serial_read_fragmented_pkt_chunked_split_read_2_wlog(void)
     RX_CHUNK_RESPLIT(rxsplit);
 
     uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1];
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf));
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(frag_exp_rx_data));
-
     PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(frag_exp_rx_data));
+    PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
     PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
@@ -1010,13 +1280,21 @@ static void test_smp_serial_read_fragmented_pkt_chunked_split_read_3(void)
     RX_CHUNK_RESPLIT(rxsplit);
 
     uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1];
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf));
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(frag_exp_rx_data));
-
     PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(frag_exp_rx_data));
+    PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
     PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
@@ -1040,13 +1318,21 @@ static void test_smp_serial_read_fragmented_pkt_chunked_split_read_3_wlog(void)
     RX_CHUNK_RESPLIT(rxsplit);
 
     uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1];
+    int rc;
     memset(rbuf, 0xaa, sizeof(rbuf));
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(frag_exp_rx_data));
-
     PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 
+    /* same test with single rx'd bytes */
+    mock_serial_port_rewind_rx_single();
+    memset(rbuf, 0xaa, sizeof(rbuf));
+    rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(frag_exp_rx_data));
+    PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
     PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
