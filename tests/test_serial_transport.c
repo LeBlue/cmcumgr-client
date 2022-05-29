@@ -236,11 +236,13 @@ static void test_smp_serial_read(void)
     mock_add_rx_chunk(rx_enc_data, sizeof(rx_enc_data));
 
     uint8_t rbuf[128];
+    memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
 
@@ -258,11 +260,13 @@ static void test_smp_serial_read_wrong_pktlen(void)
     mock_add_rx_chunk(rx_enc_data, sizeof(rx_enc_data));
 
     uint8_t rbuf[128];
+    memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
 
@@ -277,10 +281,12 @@ static void test_smp_serial_read_timeout(void)
     mock_add_rx_chunk(rx_enc_data, sizeof(rx_enc_data));
 
     uint8_t rbuf[128];
+    memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == -ETIMEDOUT);
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
 
@@ -304,11 +310,13 @@ static void test_smp_serial_read_garbage_before(void)
     mock_add_rx_chunk(rx_enc_data, sizeof(rx_enc_data));
 
     uint8_t rbuf[128];
+    memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
 static void test_smp_serial_read_chunked(void)
@@ -331,11 +339,13 @@ static void test_smp_serial_read_chunked(void)
     mock_add_rx_chunk(rx_enc_data + chunk1 + chunk2, sizeof(rx_enc_data) - (chunk1 + chunk2));
 
     uint8_t rbuf[128];
+    memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
 static void test_smp_serial_read_chunked_unaligned(void)
@@ -360,11 +370,13 @@ static void test_smp_serial_read_chunked_unaligned(void)
     mock_add_rx_chunk(rx_enc_data + chunk1 + chunk2, sizeof(rx_enc_data) - (chunk1 + chunk2));
 
     uint8_t rbuf[128];
+    memset(rbuf, 0xaa, sizeof(rbuf));
 
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
 
@@ -401,11 +413,14 @@ static void test_smp_serial_read_split_packet(void)
     mock_add_rx_chunk(rx_enc_data2, sizeof(rx_enc_data2));
 
     uint8_t rbuf[128];
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
 
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
 static void test_smp_serial_read_chunked_packet(void)
@@ -435,11 +450,14 @@ static void test_smp_serial_read_chunked_packet(void)
     RX_CHUNK(chunk_0_0);
 
     uint8_t rbuf[128];
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
 
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
 static void test_smp_serial_read_chunked_packet_2(void)
@@ -483,12 +501,14 @@ static void test_smp_serial_read_chunked_packet_2(void)
     RX_CHUNK(chunk_0_0);
     RX_CHUNK(chunk_0_1);
 
-    uint8_t rbuf[128];
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
+    uint8_t rbuf[140];
+    memset(rbuf, 0xaa, sizeof(rbuf));
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc == sizeof(exp_rx_data));
 
     PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
 static void test_smp_serial_read_chunk_too_big(void)
