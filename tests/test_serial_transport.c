@@ -31,12 +31,12 @@ struct serial_mock_state {
 
     /* data that is read from port */
     uint8_t rx_buf[MOCK_BUF_SZ];
-    size_t rx_off;
-    size_t rx_size;
+    size_t rx_off; /* current read offset */
+    size_t rx_size; /* combined data size */
 
-    size_t chunk_len[MAX_CHUNKS];
-    int n_chunks;
-    int chunk;
+    size_t chunk_len[MAX_CHUNKS]; /* length of each chunk */
+    int n_chunks; /* total number of chunks */
+    int chunk; /* current number */
 
     /* data that is written to port */
     uint8_t tx_buf[MOCK_BUF_SZ];
@@ -92,12 +92,49 @@ void mock_add_rx_chunk(const uint8_t *data, size_t sz)
 }
 
 #define RX_CHUNK(_data) \
-    mock_add_rx_chunk(_data, sizeof(_data))
+    mock_add_rx_chunk(_data, sizeof(_data)/sizeof(_data[0]))
 
 /* add to simulate data pause */
 void mock_add_rx_empty_chunk(void) {
     mock_add_rx_chunk(NULL, 0);
 }
+
+/* helper to resplit the data that will be received, to make 'port_read'
+   not align these properly. Usefull for rusing the same static data multiple
+   times with different resulting read sizes */
+void mock_rechunk_rx(size_t *chunk_lengths, int num_chunks)
+{
+    size_t dsize = 0;
+    size_t new_size = 0;
+
+    if (num_chunks >= MAX_CHUNKS) {
+        /* abort test */
+        fprintf(stderr, "Test ERROR: rechunking into too many: MAX_CHUNKS\n");
+        assert(num_chunks < MAX_CHUNKS);
+    }
+
+    for (int i = 0; i < serial_state.n_chunks; ++i) {
+        dsize += serial_state.chunk_len[i];
+    }
+
+    for (int i = 0; i < num_chunks; ++i) {
+        new_size += chunk_lengths[i];
+    }
+
+    if ((new_size != dsize) || (new_size != serial_state.rx_size)) {
+        fprintf(stderr, "Test ERROR: rechunking into different data size\n");
+        assert(new_size == dsize);
+        assert(new_size != serial_state.rx_size);
+    }
+
+    for (int i = 0; i < num_chunks; ++i) {
+        serial_state.chunk_len[i] = chunk_lengths[i];
+    }
+    serial_state.n_chunks = num_chunks;
+}
+
+#define RX_CHUNK_RESPLIT(_data) \
+    mock_rechunk_rx(_data, sizeof(_data)/sizeof(_data[0]))
 
 /* for loopback test */
 void mock_move_tx_to_rx(void) {
@@ -758,53 +795,62 @@ static void test_smp_serial_read_pkt_too_big_2(void)
     (void)exp_rx_data;
 }
 
+
+/* fragmented packet means the response is fragemnted on mcumgr layer */
+/* MgmtHeader(op:MgmtOp.WRITE_RSP group:MgmtGroup.OS id:0 len:0 seq:0 flags:0)
+    max fragment size: 100 */
+/* Full SMP packet */
+const uint8_t frag_exp_rx_data[133] =
+    "\x03\x00\x00\x7d\x00\x00\x00\x00"
+    "\xa1\x61\x72\x78\x78\x31\x32\x33\x34\x35\x36\x37\x38\x39\x30\x31"
+    "2345678901234567"
+    "8901234567890123"
+    "4567890123456789"
+    "0123456789012345"
+    "6789012345678901"
+    "2345678901234567"
+    "8901234567890";
+/* SMP serial fragment 0 chunk: 0 */
+const uint8_t frag_chunk_0_0[127] =
+    "\x06\x09"
+    "AGYDAAB9AAAAAKFh"
+    "cnh4MTIzNDU2Nzg5"
+    "MDEyMzQ1Njc4OTAx"
+    "MjM0NTY3ODkwMTIz"
+    "NDU2Nzg5MDEyMzQ1"
+    "Njc4OTAxMjM0NTY3"
+    "ODkwMTIzNDU2Nzg5"
+    "MDEyMzQ1Njc4" "\x0a";
+/* SMP serial fragment 0 chunk: 1 */
+const uint8_t frag_chunk_0_1[19] =
+    "\x04\x14"
+    "OTAxMjM0NTY3mdg="
+    "" "\x0a";
+/* SMP serial fragment 1 chunk: 0 */
+const uint8_t frag_chunk_1_0[55] =
+    "\x06\x09"
+    "ACM4OTAxMjM0NTY3"
+    "ODkwMTIzNDU2Nzg5"
+    "MDEyMzQ1Njc4OTDx"
+    "8g==" "\x0a";
+
+
+/* some interspersed log message */
+const uint8_t log_msg[69] =
+    "[00:00:00] <inf> some log message\n"
+    "[02:02:02] <inf> some log message2\n";
+
+
 static void test_smp_serial_read_pkt_too_big_fragmented(void)
 {
     /* fragmented packet means the response is fragemnted on mcumgr layer */
-	/* MgmtHeader(op:MgmtOp.WRITE_RSP group:MgmtGroup.OS id:0 len:0 seq:0 flags:0)
-	   max fragment size: 100 */
-	/* Full SMP packet */
-	const uint8_t exp_rx_data[133] =
-		"\x03\x00\x00\x7d\x00\x00\x00\x00"
-		"\xa1\x61\x72\x78\x78\x31\x32\x33\x34\x35\x36\x37\x38\x39\x30\x31"
-		"2345678901234567"
-		"8901234567890123"
-		"4567890123456789"
-		"0123456789012345"
-		"6789012345678901"
-		"2345678901234567"
-		"8901234567890";
-	/* SMP serial fragment 0 chunk: 0 */
-	const uint8_t chunk_0_0[127] =
-		"\x06\x09"
-		"AGYDAAB9AAAAAKFh"
-		"cnh4MTIzNDU2Nzg5"
-		"MDEyMzQ1Njc4OTAx"
-		"MjM0NTY3ODkwMTIz"
-		"NDU2Nzg5MDEyMzQ1"
-		"Njc4OTAxMjM0NTY3"
-		"ODkwMTIzNDU2Nzg5"
-		"MDEyMzQ1Njc4" "\x0a";
-	/* SMP serial fragment 0 chunk: 1 */
-	const uint8_t chunk_0_1[19] =
-		"\x04\x14"
-		"OTAxMjM0NTY3mdg="
-		"" "\x0a";
-	/* SMP serial fragment 1 chunk: 0 */
-	const uint8_t chunk_1_0[55] =
-		"\x06\x09"
-		"ACM4OTAxMjM0NTY3"
-		"ODkwMTIzNDU2Nzg5"
-		"MDEyMzQ1Njc4OTDx"
-		"8g==" "\x0a";
+	mock_serial_port_init();
 
-    mock_serial_port_init();
+    RX_CHUNK(frag_chunk_0_0);
+    RX_CHUNK(frag_chunk_0_1);
+    RX_CHUNK(frag_chunk_1_0);
 
-    RX_CHUNK(chunk_0_0);
-    RX_CHUNK(chunk_0_1);
-    RX_CHUNK(chunk_1_0);
-
-    uint8_t rbuf[sizeof(exp_rx_data) + 2 + 1 - 1];
+    uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1 - 1];
     memset(rbuf, 0xaa, sizeof(rbuf));
 
     int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
@@ -812,74 +858,211 @@ static void test_smp_serial_read_pkt_too_big_fragmented(void)
     PT_ASSERT(rc != 0);
     PT_ASSERT(rc == -ENOBUFS);
     PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
-    (void)exp_rx_data;
+    (void)frag_exp_rx_data;
 }
 
 static void test_smp_serial_read_fragmented_pkt_chunked(void)
 {
     /* fragmented packet means the response is fragemnted on mcumgr layer */
-	/* MgmtHeader(op:MgmtOp.WRITE_RSP group:MgmtGroup.OS id:0 len:0 seq:0 flags:0)
-	   max fragment size: 100 */
-	/* Full SMP packet */
-	const uint8_t exp_rx_data[133] =
-		"\x03\x00\x00\x7d\x00\x00\x00\x00"
-		"\xa1\x61\x72\x78\x78\x31\x32\x33\x34\x35\x36\x37\x38\x39\x30\x31"
-		"2345678901234567"
-		"8901234567890123"
-		"4567890123456789"
-		"0123456789012345"
-		"6789012345678901"
-		"2345678901234567"
-		"8901234567890";
-	/* SMP serial fragment 0 chunk: 0 */
-	const uint8_t chunk_0_0[127] =
-		"\x06\x09"
-		"AGYDAAB9AAAAAKFh"
-		"cnh4MTIzNDU2Nzg5"
-		"MDEyMzQ1Njc4OTAx"
-		"MjM0NTY3ODkwMTIz"
-		"NDU2Nzg5MDEyMzQ1"
-		"Njc4OTAxMjM0NTY3"
-		"ODkwMTIzNDU2Nzg5"
-		"MDEyMzQ1Njc4" "\x0a";
-	/* SMP serial fragment 0 chunk: 1 */
-	const uint8_t chunk_0_1[19] =
-		"\x04\x14"
-		"OTAxMjM0NTY3mdg="
-		"" "\x0a";
-	/* SMP serial fragment 1 chunk: 0 */
-	const uint8_t chunk_1_0[55] =
-		"\x06\x09"
-		"ACM4OTAxMjM0NTY3"
-		"ODkwMTIzNDU2Nzg5"
-		"MDEyMzQ1Njc4OTDx"
-		"8g==" "\x0a";
-
     mock_serial_port_init();
 
-    RX_CHUNK(chunk_0_0);
-    RX_CHUNK(chunk_0_1);
-    RX_CHUNK(chunk_1_0);
+    RX_CHUNK(frag_chunk_0_0);
+    RX_CHUNK(frag_chunk_0_1);
+    RX_CHUNK(frag_chunk_1_0);
 
-    uint8_t rbuf[sizeof(exp_rx_data) + 2 + 1];
+    uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1];
     memset(rbuf, 0xaa, sizeof(rbuf));
-    transport.verbose = 2;
+
     int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
-    PT_ASSERT(rc == sizeof(exp_rx_data));
+    PT_ASSERT(rc == sizeof(frag_exp_rx_data));
+    PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+}
 
-    PT_ASSERT_MEM_EQ(exp_rx_data, rbuf, sizeof(exp_rx_data));
+static void test_smp_serial_read_fragmented_pkt_chunked_split_read_1(void)
+{
+    /* fragmented packet means the response is fragemnted on mcumgr layer
+       additionally make port not receive on chunks/fragment boundaries */
+    mock_serial_port_init();
+
+    RX_CHUNK(frag_chunk_0_0);
+    RX_CHUNK(frag_chunk_0_1);
+    RX_CHUNK(frag_chunk_1_0);
+
+    /* receive just one stream */
+    size_t rxsplit[] = {
+        sizeof(frag_chunk_0_0) + sizeof(frag_chunk_0_1) + sizeof(frag_chunk_1_0),
+    };
+    RX_CHUNK_RESPLIT(rxsplit);
+
+    uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1];
+    memset(rbuf, 0xaa, sizeof(rbuf));
+    transport.verbose = TRANSPORT_VERBOSE;
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(frag_exp_rx_data));
+    PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+}
+
+static void test_smp_serial_read_fragmented_pkt_chunked_split_read_1_wlog(void)
+{
+    /* fragmented packet means the response is fragemnted on mcumgr layer
+       additionally make port not receive on chunks/fragment boundaries */
+    mock_serial_port_init();
+
+    RX_CHUNK(frag_chunk_0_0);
+    RX_CHUNK(log_msg);
+    RX_CHUNK(frag_chunk_0_1);
+    RX_CHUNK(log_msg);
+    RX_CHUNK(frag_chunk_1_0);
+    RX_CHUNK(log_msg);
+
+    /* receive just one stream */
+    size_t rxsplit[] = {
+        sizeof(frag_chunk_0_0) + sizeof(frag_chunk_0_1) + sizeof(frag_chunk_1_0) + 3*sizeof(log_msg),
+    };
+    RX_CHUNK_RESPLIT(rxsplit);
+
+    uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1];
+    memset(rbuf, 0xaa, sizeof(rbuf));
+    transport.verbose = TRANSPORT_VERBOSE;
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(frag_exp_rx_data));
+    PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+}
+
+static void test_smp_serial_read_fragmented_pkt_chunked_split_read_2(void)
+{
+    /* fragmented packet means the response is fragemnted on mcumgr layer */
+    mock_serial_port_init();
+
+    RX_CHUNK(frag_chunk_0_0);
+    RX_CHUNK(frag_chunk_0_1);
+    RX_CHUNK(frag_chunk_1_0);
+
+    size_t rxsplit[] = {
+        sizeof(frag_chunk_0_0),
+        sizeof(frag_chunk_0_1) + 2, /* receive next 2 bytes (SOF) early */
+        sizeof(frag_chunk_1_0) - 2,
+    };
+    RX_CHUNK_RESPLIT(rxsplit);
+
+    uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1];
+    memset(rbuf, 0xaa, sizeof(rbuf));
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(frag_exp_rx_data));
+
+    PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
 
     PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
 
-static void suite_smp_serial(void)
+static void test_smp_serial_read_fragmented_pkt_chunked_split_read_2_wlog(void)
 {
-    const char *sn =  "Suite SMP serial transport";
+    /* fragmented packet means the response is fragemnted on mcumgr layer */
+    mock_serial_port_init();
+
+    RX_CHUNK(frag_chunk_0_0);
+    RX_CHUNK(log_msg);
+    RX_CHUNK(frag_chunk_0_1);
+    RX_CHUNK(log_msg);
+    RX_CHUNK(frag_chunk_1_0);
+    RX_CHUNK(log_msg);
+
+    size_t rxsplit[] = {
+        sizeof(frag_chunk_0_0) + sizeof(log_msg),
+        sizeof(frag_chunk_0_1) + sizeof(log_msg) + 2, /* receive next 2 bytes (SOF) early */
+        sizeof(frag_chunk_1_0) + sizeof(log_msg) - 2,
+    };
+    RX_CHUNK_RESPLIT(rxsplit);
+
+    uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1];
+    memset(rbuf, 0xaa, sizeof(rbuf));
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(frag_exp_rx_data));
+
+    PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
+
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+}
+
+static void test_smp_serial_read_fragmented_pkt_chunked_split_read_3(void)
+{
+    /* fragmented packet means the response is fragemnted on mcumgr layer */
+    mock_serial_port_init();
+
+    RX_CHUNK(frag_chunk_0_0);
+    RX_CHUNK(frag_chunk_0_1);
+    RX_CHUNK(frag_chunk_1_0);
+
+    size_t rxsplit[] = {
+        sizeof(frag_chunk_0_0),
+        sizeof(frag_chunk_0_1) + 1, /* receive partial next SOF early */
+        sizeof(frag_chunk_1_0) - 1,
+    };
+    RX_CHUNK_RESPLIT(rxsplit);
+
+    uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1];
+    memset(rbuf, 0xaa, sizeof(rbuf));
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(frag_exp_rx_data));
+
+    PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
+
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+}
+
+static void test_smp_serial_read_fragmented_pkt_chunked_split_read_3_wlog(void)
+{
+    /* fragmented packet means the response is fragemnted on mcumgr layer */
+    mock_serial_port_init();
+
+    RX_CHUNK(frag_chunk_0_0);
+    RX_CHUNK(log_msg);
+    RX_CHUNK(frag_chunk_0_1);
+    RX_CHUNK(log_msg);
+    RX_CHUNK(frag_chunk_1_0);
+    RX_CHUNK(log_msg);
+
+    size_t rxsplit[] = {
+        sizeof(frag_chunk_0_0) + sizeof(log_msg) + 1,  /* receive partial next SOF early */
+        sizeof(frag_chunk_0_1) + sizeof(log_msg),      /* receive partial next SOF early */
+        sizeof(frag_chunk_1_0) + sizeof(log_msg) - 1,
+    };
+    RX_CHUNK_RESPLIT(rxsplit);
+
+    uint8_t rbuf[sizeof(frag_exp_rx_data) + 2 + 1];
+    memset(rbuf, 0xaa, sizeof(rbuf));
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc == sizeof(frag_exp_rx_data));
+
+    PT_ASSERT_MEM_EQ(frag_exp_rx_data, rbuf, sizeof(frag_exp_rx_data));
+
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
+}
+
+
+
+static void suite_smp_serial_write(void)
+{
+    const char *sn =  "Suite SMP serial transport write";
 
     pt_add_test(test_smp_serial_write_hello, "Serial port write: Hello", sn);
     pt_add_test(test_smp_serial_write_mgmt_rc, "Serial port write: MGMT RC", sn);
+}
+
+static void suite_smp_serial_read(void)
+{
+    const char *sn =  "Suite SMP serial transport read";
 
     pt_add_test(test_smp_serial_read, "Serial port read: MGMT RC", sn);
     pt_add_test(test_smp_serial_read_wrong_pktlen, "Serial port read: pktlen -2: MGMT RC", sn);
@@ -891,7 +1074,6 @@ static void suite_smp_serial(void)
     pt_add_test(test_smp_serial_read_chunked_packet, "Serial port read: chunked smp packet: echo rsp", sn);
     pt_add_test(test_smp_serial_read_chunked_packet_2, "Serial port read: chunked smp packet 2: echo rsp", sn);
 
-
     pt_add_test(test_smp_serial_read_pkt_just_enough,  "Serial port read: unfragmented packet 2: pkt just fits", sn);
 
     pt_add_test(test_smp_serial_read_pkt_too_big_1,  "Serial port read: unfragmented packet: pkt too big 1 byte", sn);
@@ -900,10 +1082,23 @@ static void suite_smp_serial(void)
     pt_add_test(test_smp_serial_read_pkt_too_big_data_chunk_0,  "Serial port read: unfragmented packet: pkt too big: data chunk 0", sn);
     pt_add_test(test_smp_serial_read_pkt_too_big_data_1_chunk_1,  "Serial port read: unfragmented packet: pkt too big: data 1 chunk 1", sn);
     pt_add_test(test_smp_serial_read_pkt_too_big_data_chunk_1,  "Serial port read: unfragmented packet: pkt too big: data chunk 1", sn);
+}
+
+static void suite_smp_serial_read_fragmented(void)
+{
+    const char *sn =  "Suite SMP serial transport read fragmented";
 
     pt_add_test(test_smp_serial_read_pkt_too_big_2,  "Serial port read: fragmented packet: pkt too big 2", sn);
     pt_add_test(test_smp_serial_read_pkt_too_big_fragmented,  "Serial port read: fragmented packet: too big, fragmented", sn);
     pt_add_test(test_smp_serial_read_fragmented_pkt_chunked,  "Serial port read: fragmented packet: echo", sn);
+
+    pt_add_test(test_smp_serial_read_fragmented_pkt_chunked_split_read_1, "Serial port read: fragmented packet: uneven read 1", sn);
+    pt_add_test(test_smp_serial_read_fragmented_pkt_chunked_split_read_1_wlog, "Serial port read: fragmented packet: uneven read 1 w/ log", sn);
+    pt_add_test(test_smp_serial_read_fragmented_pkt_chunked_split_read_2, "Serial port read: fragmented packet: uneven read 2", sn);
+    pt_add_test(test_smp_serial_read_fragmented_pkt_chunked_split_read_2_wlog, "Serial port read: fragmented packet: uneven read 2 w/log", sn);
+    pt_add_test(test_smp_serial_read_fragmented_pkt_chunked_split_read_3, "Serial port read: fragmented packet: uneven read 3", sn);
+    pt_add_test(test_smp_serial_read_fragmented_pkt_chunked_split_read_3_wlog, "Serial port read: fragmented packet: uneven read 3 w/log", sn);
+
 }
 
 int main(int argc, char** argv)
@@ -913,7 +1108,9 @@ int main(int argc, char** argv)
 
     init_serial_transport();
 
-    pt_add_suite(suite_smp_serial);
+    pt_add_suite(suite_smp_serial_write);
+    pt_add_suite(suite_smp_serial_read);
+    pt_add_suite(suite_smp_serial_read_fragmented);
 
     return pt_run();
 }
