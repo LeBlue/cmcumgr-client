@@ -511,9 +511,200 @@ static void test_smp_serial_read_chunked_packet_2(void)
     PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
-static void test_smp_serial_read_chunk_too_big(void)
+
+/* transport read has not enough buffer to hold whole smp packet
+    test with multiple different sizes. Share this data
+ */
+/* MgmtHeader(op:MgmtOp.WRITE_RSP group:MgmtGroup.OS id:0 len:0 seq:0 flags:0)
+    max fragment size: 250 */
+/* Full SMP packet */
+static const uint8_t smp2big_exp_rx_data[133] =
+    "\x03\x00\x00\x7d\x00\x00\x00\x00"
+    "\xa1\x61\x72\x78\x78\x31\x32\x33\x34\x35\x36\x37\x38\x39\x30\x31"
+    "2345678901234567"
+    "8901234567890123"
+    "4567890123456789"
+    "0123456789012345"
+    "6789012345678901"
+    "2345678901234567"
+    "8901234567890";
+/* SMP serial fragment 0 chunk: 0 */
+static const uint8_t smp2big_chunk_0_0[127] =
+    "\x06\x09"
+    "AIcDAAB9AAAAAKFh"
+    "cnh4MTIzNDU2Nzg5"
+    "MDEyMzQ1Njc4OTAx"
+    "MjM0NTY3ODkwMTIz"
+    "NDU2Nzg5MDEyMzQ1"
+    "Njc4OTAxMjM0NTY3"
+    "ODkwMTIzNDU2Nzg5"
+    "MDEyMzQ1Njc4" "\x0a";
+/* SMP serial fragment 0 chunk: 1 */
+static const uint8_t smp2big_chunk_0_1[63] =
+    "\x04\x14"
+    "OTAxMjM0NTY3ODkw"
+    "MTIzNDU2Nzg5MDEy"
+    "MzQ1Njc4OTAxMjM0"
+    "NTY3ODkwg64=" "\x0a";
+
+
+static void test_smp_serial_read_pkt_just_enough(void)
 {
-    /* The chunk size is bigger than (max 127, here 128) */
+    /* exactly enough buf space. */
+    size_t buflen = sizeof(smp2big_exp_rx_data) + 2; /* tested buffer size, 2 extra for crc needed */
+
+    mock_serial_port_init();
+
+    RX_CHUNK(smp2big_chunk_0_0);
+    RX_CHUNK(smp2big_chunk_0_1);
+
+    uint8_t rbuf[251]; /* make big for copy+paste test */
+    memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
+
+    int rc = transport.ops->read(&transport, rbuf, buflen);
+
+    PT_ASSERT(rc == sizeof(smp2big_exp_rx_data));
+    PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
+
+    PT_ASSERT_MEM_EQ(smp2big_exp_rx_data, rbuf, sizeof(smp2big_exp_rx_data));
+}
+
+
+static void test_smp_serial_read_pkt_too_big_1(void)
+{
+    /* really no buf space. (1 byte) */
+    size_t buflen = 1; /* tested buffer size */
+
+    mock_serial_port_init();
+
+    RX_CHUNK(smp2big_chunk_0_0);
+    RX_CHUNK(smp2big_chunk_0_1);
+
+    uint8_t rbuf[251]; /* make big for copy+paste test */
+    memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
+
+    int rc = transport.ops->read(&transport, rbuf, buflen);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
+    (void)smp2big_exp_rx_data;
+}
+
+
+static void test_smp_serial_read_pkt_too_big_oneless(void)
+{
+    /* almost enough buf space. (-1 byte) */
+    size_t buflen = sizeof(smp2big_exp_rx_data) - 1 + 2; /* tested buffer size, +2 for crc needed */
+
+    mock_serial_port_init();
+
+    RX_CHUNK(smp2big_chunk_0_0);
+    RX_CHUNK(smp2big_chunk_0_1);
+
+    uint8_t rbuf[251]; /* make big for copy+paste test */
+    memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
+
+    int rc = transport.ops->read(&transport, rbuf, buflen);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
+    (void)smp2big_exp_rx_data;
+}
+
+
+static void test_smp_serial_read_pkt_too_big_data_1_chunk_0(void)
+{
+    /* not enough buf space to decode data 1. byte */
+    size_t buflen = 0; /* tested buffer size */
+
+    mock_serial_port_init();
+
+    RX_CHUNK(smp2big_chunk_0_0);
+    RX_CHUNK(smp2big_chunk_0_1);
+
+    uint8_t rbuf[251]; /* make big for copy+paste test */
+    memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
+
+    int rc = transport.ops->read(&transport, rbuf, buflen);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
+    (void)smp2big_exp_rx_data;
+}
+
+
+static void test_smp_serial_read_pkt_too_big_data_chunk_0(void)
+{
+    /* almost enough buf space. (-1 byte) */
+    size_t buflen = 93; /* tested buffer size */
+
+    mock_serial_port_init();
+
+    RX_CHUNK(smp2big_chunk_0_0);
+    RX_CHUNK(smp2big_chunk_0_1);
+
+    uint8_t rbuf[251]; /* make big for copy+paste test */
+    memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
+
+    int rc = transport.ops->read(&transport, rbuf, buflen);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
+    (void)smp2big_exp_rx_data;
+}
+
+
+static void test_smp_serial_read_pkt_too_big_data_1_chunk_1(void)
+{
+    /* almost enough buf space. (-1 byte) */
+    size_t buflen = sizeof(smp2big_exp_rx_data) - 1; /* tested buffer size */
+
+    mock_serial_port_init();
+
+    RX_CHUNK(smp2big_chunk_0_0);
+    RX_CHUNK(smp2big_chunk_0_1);
+
+    uint8_t rbuf[251]; /* make big for copy+paste test */
+    memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
+
+    int rc = transport.ops->read(&transport, rbuf, buflen);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
+    (void)smp2big_exp_rx_data;
+}
+
+
+static void test_smp_serial_read_pkt_too_big_data_chunk_1(void)
+{
+    /* almost enough buf space. (-1 byte) */
+    size_t buflen = sizeof(smp2big_exp_rx_data) - 1; /* tested buffer size */
+
+    mock_serial_port_init();
+
+    RX_CHUNK(smp2big_chunk_0_0);
+    RX_CHUNK(smp2big_chunk_0_1);
+
+    uint8_t rbuf[251]; /* make big for copy+paste test */
+    memset(rbuf, 0xaa, sizeof(rbuf)); /* add sentinel value, reserve 1 byte for overflow checking */
+
+    int rc = transport.ops->read(&transport, rbuf, buflen);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[buflen] == 0xaa); /* check for overflow */
+    (void)smp2big_exp_rx_data;
+}
+
+
+static void test_smp_serial_read_pkt_too_big_2(void)
+{
+    /* transport read has not enough buffer to hold whole smp packet */
 	/* MgmtHeader(op:MgmtOp.WRITE_RSP group:MgmtGroup.OS id:0 len:0 seq:0 flags:0)
 	   max fragment size: 250 */
 	/* Full SMP packet */
@@ -528,7 +719,7 @@ static void test_smp_serial_read_chunk_too_big(void)
 		"2345678901234567"
 		"8901234567890";
 	/* SMP serial fragment 0 chunk: 0 */
-	const uint8_t chunk_0_0[128] =
+	const uint8_t chunk_0_0[127] =
 		"\x06\x09"
 		"AIcDAAB9AAAAAKFh"
 		"cnh4MTIzNDU2Nzg5"
@@ -537,28 +728,32 @@ static void test_smp_serial_read_chunk_too_big(void)
 		"NDU2Nzg5MDEyMzQ1"
 		"Njc4OTAxMjM0NTY3"
 		"ODkwMTIzNDU2Nzg5"
-		"MDEyMzQ1Njc4O" "\x0a";
+		"MDEyMzQ1Njc4" "\x0a";
 	/* SMP serial fragment 0 chunk: 1 */
-	const uint8_t chunk_0_1[62] =
+	const uint8_t chunk_0_1[63] =
 		"\x04\x14"
-		"TAxMjM0NTY3ODkwM"
-		"TIzNDU2Nzg5MDEyM"
-		"zQ1Njc4OTAxMjM0N"
-		"TY3ODkwg64=" "\x0a";
+		"OTAxMjM0NTY3ODkw"
+		"MTIzNDU2Nzg5MDEy"
+		"MzQ1Njc4OTAxMjM0"
+		"NTY3ODkwg64=" "\x0a";
 
     mock_serial_port_init();
 
     RX_CHUNK(chunk_0_0);
     RX_CHUNK(chunk_0_1);
 
-    uint8_t rbuf[128];
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
+    uint8_t rbuf[sizeof(exp_rx_data)];
+    memset(rbuf, 0xaa, sizeof(exp_rx_data));
 
-    PT_ASSERT(rc == -EPROTO);
-    (void)exp_rx_data; /* Unused */
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
+
+    PT_ASSERT(rc != 0);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[sizeof(exp_rx_data) - 1] == 0xaa);
+    (void)exp_rx_data;
 }
 
-static void test_smp_serial_read_pkt_too_big(void)
+static void test_smp_serial_read_pkt_too_big_fragmented(void)
 {
     /* fragmented packet means the response is fragemnted on mcumgr layer */
 	/* MgmtHeader(op:MgmtOp.WRITE_RSP group:MgmtGroup.OS id:0 len:0 seq:0 flags:0)
@@ -602,13 +797,16 @@ static void test_smp_serial_read_pkt_too_big(void)
 
     RX_CHUNK(chunk_0_0);
     RX_CHUNK(chunk_0_1);
-    RX_CHUNK(chunk_0_1);
+    RX_CHUNK(chunk_1_0);
 
-    uint8_t rbuf[128];
-    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf));
+    uint8_t rbuf[sizeof(exp_rx_data) + 2 + 1 - 1];
+    memset(rbuf, 0xaa, sizeof(rbuf));
+
+    int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
     PT_ASSERT(rc != 0);
-    PT_ASSERT(rc != -ENOBUFS);
+    PT_ASSERT(rc == -ENOBUFS);
+    PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
     (void)exp_rx_data;
 }
 
@@ -656,10 +854,10 @@ static void test_smp_serial_read_fragmented_pkt_chunked(void)
 
     RX_CHUNK(chunk_0_0);
     RX_CHUNK(chunk_0_1);
-    RX_CHUNK(chunk_0_1);
+    RX_CHUNK(chunk_1_0);
 
-    uint8_t rbuf[134];
-    rbuf[sizeof(rbuf) - 1] = 0xaa;
+    uint8_t rbuf[sizeof(exp_rx_data) + 2 + 1];
+    memset(rbuf, 0xaa, sizeof(rbuf));
     transport.verbose = 2;
     int rc = transport.ops->read(&transport, rbuf, sizeof(rbuf) - 1);
 
@@ -687,8 +885,19 @@ static void suite_smp_serial(void)
     pt_add_test(test_smp_serial_read_split_packet, "Serial port read: split packet: MGMT RC", sn);
     pt_add_test(test_smp_serial_read_chunked_packet, "Serial port read: chunked smp packet: echo rsp", sn);
     pt_add_test(test_smp_serial_read_chunked_packet_2, "Serial port read: chunked smp packet 2: echo rsp", sn);
-    pt_add_test(test_smp_serial_read_chunk_too_big,  "Serial port read: fragmented packet 2: chunk too big", sn);
-    pt_add_test(test_smp_serial_read_pkt_too_big,  "Serial port read: fragmented packet: pkt too big", sn);
+
+
+    pt_add_test(test_smp_serial_read_pkt_just_enough,  "Serial port read: unfragmented packet 2: pkt just fits", sn);
+
+    pt_add_test(test_smp_serial_read_pkt_too_big_1,  "Serial port read: unfragmented packet: pkt too big 1 byte", sn);
+    pt_add_test(test_smp_serial_read_pkt_too_big_oneless,  "Serial port read: unfragmented packet: pkt too big -1 byte", sn);
+    pt_add_test(test_smp_serial_read_pkt_too_big_data_1_chunk_0,  "Serial port read: unfragmented packet: pkt too big: data 1 chunk 0", sn);
+    pt_add_test(test_smp_serial_read_pkt_too_big_data_chunk_0,  "Serial port read: unfragmented packet: pkt too big: data chunk 0", sn);
+    pt_add_test(test_smp_serial_read_pkt_too_big_data_1_chunk_1,  "Serial port read: unfragmented packet: pkt too big: data 1 chunk 1", sn);
+    pt_add_test(test_smp_serial_read_pkt_too_big_data_chunk_1,  "Serial port read: unfragmented packet: pkt too big: data chunk 1", sn);
+
+    pt_add_test(test_smp_serial_read_pkt_too_big_2,  "Serial port read: fragmented packet: pkt too big 2", sn);
+    pt_add_test(test_smp_serial_read_pkt_too_big_fragmented,  "Serial port read: fragmented packet: too big, fragmented", sn);
     pt_add_test(test_smp_serial_read_fragmented_pkt_chunked,  "Serial port read: fragmented packet: echo", sn);
 }
 
