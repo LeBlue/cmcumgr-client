@@ -22,6 +22,10 @@
 
 #define MOCK_BUF_SZ 2048
 #define MAX_CHUNKS 20
+
+/* debug: set verbosity of transport (0/1/2) */
+#define TRANSPORT_VERBOSE 0
+
 struct serial_mock_state {
     uint8_t read_poll_wait;
 
@@ -174,13 +178,14 @@ static struct smp_serial_handle serial_handle;
 void init_serial_transport(void)
 {
     if (serial_transport_init(&transport, &serial_handle, &sopts)) {
-        fprintf(stderr, "Failed to init transport\n");
+        fprintf(stderr, "Test ERROR: Failed to init transport\n");
         exit(EXIT_FAILURE);
     }
     if (transport.ops->open(&transport)) {
-        fprintf(stderr, "Failed to open transport\n");
+        fprintf(stderr, "Test ERROR: Failed to open transport\n");
         exit(EXIT_FAILURE);
     }
+    transport.verbose = TRANSPORT_VERBOSE;
 }
 
 
