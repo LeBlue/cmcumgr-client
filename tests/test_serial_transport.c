@@ -26,6 +26,11 @@
 /* debug: set verbosity of transport (0/1/2) */
 #define TRANSPORT_VERBOSE 0
 
+/* simple way to 'comment' out some tests, set to 0 to disable */
+#define TEST_WRITE 1
+#define TEST_READ 1
+#define TEST_READ_FRAG 1
+
 struct serial_mock_state {
     uint8_t read_poll_wait;
 
@@ -259,6 +264,7 @@ void init_serial_transport(void)
     transport.verbose = TRANSPORT_VERBOSE;
 }
 
+#if TEST_WRITE
 
 static void test_smp_serial_write_hello(void)
 {
@@ -388,6 +394,9 @@ static void test_smp_serial_write_long(void)
     PT_ASSERT_MEM_EQ(serial_state.tx_buf + tx_off , tx_chunk_1_0, sizeof(tx_chunk_1_0));
 
 }
+#endif /* TEST_WRITE */
+
+#if TEST_READ
 
 static void test_smp_serial_read(void)
 {
@@ -1099,6 +1108,9 @@ static void test_smp_serial_read_pkt_too_big_2(void)
 
 }
 
+#endif /* TEST_READ */
+
+#if TEST_READ_FRAG
 
 /* fragmented packet means the response is fragemnted on mcumgr layer */
 /* MgmtHeader(op:MgmtOp.WRITE_RSP group:MgmtGroup.OS id:0 len:0 seq:0 flags:0)
@@ -1432,6 +1444,7 @@ static void test_smp_serial_read_fragmented_pkt_chunked_split_read_3_wlog(void)
     PT_ASSERT(rbuf[sizeof(rbuf) - 1] == 0xaa);
 }
 
+#endif /* TEST_READ_FRAG */
 
 
 static void suite_smp_serial_write(void)
@@ -1443,6 +1456,7 @@ static void suite_smp_serial_write(void)
     pt_add_test(test_smp_serial_write_long, "Serial port write: Long fragmenterd/chunked", sn);
 }
 
+#if TEST_READ
 static void suite_smp_serial_read(void)
 {
     const char *sn =  "Suite SMP serial transport read";
@@ -1466,7 +1480,9 @@ static void suite_smp_serial_read(void)
     pt_add_test(test_smp_serial_read_pkt_too_big_data_1_chunk_1,  "Serial port read: unfragmented packet: pkt too big: data 1 chunk 1", sn);
     pt_add_test(test_smp_serial_read_pkt_too_big_data_chunk_1,  "Serial port read: unfragmented packet: pkt too big: data chunk 1", sn);
 }
+#endif
 
+#if TEST_READ_FRAG
 static void suite_smp_serial_read_fragmented(void)
 {
     const char *sn =  "Suite SMP serial transport read fragmented";
@@ -1483,6 +1499,7 @@ static void suite_smp_serial_read_fragmented(void)
     pt_add_test(test_smp_serial_read_fragmented_pkt_chunked_split_read_3_wlog, "Serial port read: fragmented packet: uneven read 3 w/log", sn);
 
 }
+#endif
 
 int main(int argc, char** argv)
 {
@@ -1491,9 +1508,14 @@ int main(int argc, char** argv)
 
     init_serial_transport();
 
+#if TEST_WRITE
     pt_add_suite(suite_smp_serial_write);
+#endif
+#if TEST_READ
     pt_add_suite(suite_smp_serial_read);
+#endif
+#if TEST_READ_FRAG
     pt_add_suite(suite_smp_serial_read_fragmented);
-
+#endif
     return pt_run();
 }
