@@ -153,7 +153,7 @@ int serial_transport_write(struct smp_transport *transport, uint8_t *buf, size_t
 }
 
 
-static int smp_pkt_check_crc(uint8_t *buf, size_t pktlen, int verbose)
+static int smp_pkt_check_crc(const uint8_t *buf, size_t pktlen, int verbose)
 {
     uint16_t crc_c;
 
@@ -185,12 +185,12 @@ static int smp_pkt_check_crc(uint8_t *buf, size_t pktlen, int verbose)
  * @retval -EAGAIN  fragment(s) missing
  * @retval -EBADMSG more data than MGMT header length indicates (TODO)
  */
-static int smp_check_complete(uint8_t *buf, size_t datalen, int verbose)
+static int smp_check_complete(const uint8_t *buf, size_t datalen, int verbose)
 {
     DBG("Checking len: %d\n", (int)datalen);
     int rc = mgmt_header_len_check(buf, datalen);
     if (rc == -ENODATA) {
-        DBG("Expecting more: %d\n", (int)(mgmt_header_get_len((void *)buf) - datalen));
+        DBG("Expecting more: %d\n", (int)(mgmt_header_get_len((const void *)buf) - datalen));
 
         return -EAGAIN;
     } else if (rc == 0) {
@@ -216,7 +216,7 @@ static int smp_check_complete(uint8_t *buf, size_t datalen, int verbose)
  * @param len      length of valid data in the @p buf
  * @return size_t  the calculated length. 0 if EOF was not found
  */
-static size_t smp_read_frame_len(uint8_t *buf, size_t len)
+static size_t smp_read_frame_len(const uint8_t *buf, size_t len)
 {
     size_t off;
 
@@ -236,7 +236,7 @@ static size_t smp_read_frame_len(uint8_t *buf, size_t len)
  * before is discarded. Updates the @p prxoff to reflect the number
  * of bytes in the @p rxbuf after discarding.
  *
- * @param rxbuf       buffer with received data
+ * @param rxbuf       buffer with received data, updated in place
  * @param prxoff      number of bytes in @p rxbuf before reading, will be updated
  * @param bytes_read  number of bytes read in the buffer
  * @return int        number of bytes in the buffer.
@@ -290,7 +290,7 @@ static int smp_find_frame_start(uint8_t *rxbuf, size_t *prxoff, int bytes_read)
  * @param decbuf  Buffer for decoded data. First data byte will be decoded/written here
  * @return int    the decoded packet length, or negative error code
  */
-static int smp_read_pkt_len(uint8_t *rxbuf, uint8_t *decbuf)
+static int smp_read_pkt_len(const uint8_t *rxbuf, uint8_t *decbuf)
 {
     int drc;
     uint8_t pktlen_buf[5];
@@ -301,7 +301,7 @@ static int smp_read_pkt_len(uint8_t *rxbuf, uint8_t *decbuf)
     memcpy(pktlen_buf, rxbuf + 2, 4);
     pktlen_buf[4] = '\0';
 
-    drc = base64_decode((char*)pktlen_buf, tmp);
+    drc = base64_decode((const char*)pktlen_buf, tmp);
     pktlen = get_be16(tmp);
     DBG("SMP fragment len: %d\n", pktlen);
 
@@ -339,7 +339,7 @@ static int serial_transport_read(struct smp_transport *transport, uint8_t *buf, 
     uint16_t fraglen = 0;
     uint16_t smp_len = 0;
 
-    struct smp_serial_handle *hd = get_handle(transport);
+    const struct smp_serial_handle *hd = get_handle(transport);
 
     int tmo = transport->timeout;
 
@@ -437,7 +437,7 @@ static int serial_transport_read(struct smp_transport *transport, uint8_t *buf, 
                 }
 
                 /* make sure to not overflow out buf */
-                drc = base64_decode_len((char*)&rxbuf[soff]);
+                drc = base64_decode_len((const char*)&rxbuf[soff]);
                 DBG("EST2 len: %d\n", (int)drc);
 
                 if ((boff + drc) > maxlen) {
@@ -445,7 +445,7 @@ static int serial_transport_read(struct smp_transport *transport, uint8_t *buf, 
                     return -ENOBUFS;
                 }
 
-                drc = base64_decode((char*)&rxbuf[soff], bbuf + boff);
+                drc = base64_decode((const char*)&rxbuf[soff], bbuf + boff);
                 DBG("REAL len: %d\n", (int)drc);
 
                 /* decode data and potentially crc */
