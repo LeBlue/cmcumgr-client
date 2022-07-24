@@ -12,12 +12,12 @@
 struct smp_handle;
 struct smp_transport;
 
-typedef int (*transport_open_fn)(struct smp_transport* fh);
-typedef int (*transport_init_fn)(struct smp_transport* fh, struct smp_handle *hd);
-typedef int (*transport_connect_fn)(struct smp_transport* fh);
-typedef int (*transport_read_fn)(struct smp_transport* fh, uint8_t *buf, size_t sz);
-typedef int (*transport_write_fn)(struct smp_transport* fh, uint8_t *buf, size_t sz);
-typedef void (*transport_close_fn)(struct smp_transport* fh);
+typedef int (*transport_open_fn)(struct smp_transport* t);
+typedef int (*transport_init_fn)(struct smp_transport* t, struct smp_handle *hd);
+typedef int (*transport_connect_fn)(struct smp_transport* t);
+typedef int (*transport_read_fn)(struct smp_transport* t, uint8_t *buf, size_t sz);
+typedef int (*transport_write_fn)(struct smp_transport* t, uint8_t *buf, size_t sz);
+typedef void (*transport_close_fn)(struct smp_transport* t);
 typedef int (*transport_get_mtu_fn)(struct smp_transport* t);
 
 
