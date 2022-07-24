@@ -18,8 +18,8 @@ do { \
     if (_ret != 0) { \
         hexdump(_mem1, _len, "\n" _XSTR(_mem1) "\n"); \
         hexdump(_mem2, _len,      _XSTR(_mem2) "\n"); \
+        PT_ASSERT(0 == memcmp(_mem1, _mem2, _len)); \
     } \
-    PT_ASSERT(_ret == 0); \
 } while (0)
 
 
