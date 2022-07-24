@@ -187,6 +187,7 @@ int port_read_poll(int fd, char *buf, size_t maxlen, int end_time, int verbose)
             if (!n) {
                 rc = -ETIMEDOUT;
             } else if (errno == EAGAIN || errno == EINTR) {
+                rc = -errno;
                 now = time_get();
                 if (now > end_time) {
                     rc = -ETIMEDOUT;
