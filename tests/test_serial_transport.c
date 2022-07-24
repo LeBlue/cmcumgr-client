@@ -41,6 +41,9 @@ struct serial_mock_state {
     /* data that is written to port */
     uint8_t tx_buf[MOCK_BUF_SZ];
     size_t tx_off;
+    size_t tx_chunk_len[MAX_CHUNKS];
+    int tx_chunk;
+
     /* option to always return only one bytes (single step) */
     bool single_bytes;
 };
@@ -71,6 +74,8 @@ void mock_serial_port_rewind(void)
     serial_state.rx_off = 0;
     serial_state.tx_off = 0;
     memset(&serial_state.tx_buf, 0, sizeof(serial_state.tx_buf));
+    serial_state.tx_chunk = 0;
+    memset(&serial_state.tx_chunk_len, 0, sizeof(serial_state.tx_chunk_len));
 }
 
 void mock_serial_port_rewind_rx_single(void)
@@ -292,6 +297,97 @@ static void test_smp_serial_write_mgmt_rc(void)
     PT_ASSERT_MEM_EQ(serial_state.tx_buf, tx_enc_data, sizeof(tx_enc_data));
 }
 
+
+/* MgmtHeader(op:MgmtOp.WRITE_RSP group:MgmtGroup.OS id:0 len:0 seq:0 flags:0)
+max fragment size: 250 */
+/* Full SMP packet */
+const uint8_t tx_long_data[263] =
+    "\x03\x00\x00\xff\x00\x00\x00\x00"
+    "\xa1\x61\x72\x78\xfa\x31\x32\x33\x34\x35\x36\x37\x38\x39\x30\x31"
+    "2345678901234567"
+    "8901234567890123"
+    "4567890123456789"
+    "0123456789012345"
+    "6789012345678901"
+    "2345678901234567"
+    "8901234567890123"
+    "4567890123456789"
+    "0123456789012345"
+    "6789012345678901"
+    "2345678901234567"
+    "8901234567890123"
+    "4567890123456789"
+    "0123456789012345"
+    "678901234567890";
+/* SMP serial fragment 0 chunk: 0 */
+const uint8_t tx_chunk_0_0[127] =
+    "\x06\x09"
+    "APwDAAD/AAAAAKFh"
+    "cnj6MTIzNDU2Nzg5"
+    "MDEyMzQ1Njc4OTAx"
+    "MjM0NTY3ODkwMTIz"
+    "NDU2Nzg5MDEyMzQ1"
+    "Njc4OTAxMjM0NTY3"
+    "ODkwMTIzNDU2Nzg5"
+    "MDEyMzQ1Njc4" "\x0a";
+/* SMP serial fragment 0 chunk: 1 */
+const uint8_t tx_chunk_0_1[127] =
+    "\x04\x14"
+    "OTAxMjM0NTY3ODkw"
+    "MTIzNDU2Nzg5MDEy"
+    "MzQ1Njc4OTAxMjM0"
+    "NTY3ODkwMTIzNDU2"
+    "Nzg5MDEyMzQ1Njc4"
+    "OTAxMjM0NTY3ODkw"
+    "MTIzNDU2Nzg5MDEy"
+    "MzQ1Njc4OTAx" "\x0a";
+/* SMP serial fragment 0 chunk: 2 */
+const uint8_t tx_chunk_0_2[95] =
+    "\x04\x14"
+    "MjM0NTY3ODkwMTIz"
+    "NDU2Nzg5MDEyMzQ1"
+    "Njc4OTAxMjM0NTY3"
+    "ODkwMTIzNDU2Nzg5"
+    "MDEyMzQ1Njc4OTAx"
+    "MjM0NTY38RE=" "\x0a";
+/* SMP serial fragment 1 chunk: 0 */
+const uint8_t tx_chunk_1_0[27] =
+    "\x06\x09"
+    "AA84OTAxMjM0NTY3"
+    "ODkwXc0=" "\x0a";
+
+static void test_smp_serial_write_long(void)
+{
+    size_t tx_len = sizeof(tx_long_data);
+    uint8_t *tx_data = tx_copy_msg(tx_long_data, tx_len);
+    size_t tx_total = 0;
+    size_t tx_off = 0;
+
+    mock_serial_port_init();
+
+    int rc = transport.ops->write(&transport, tx_data, tx_len);
+
+    PT_ASSERT(rc == 0);
+    tx_total += sizeof(tx_chunk_0_0);
+    tx_total += sizeof(tx_chunk_0_1);
+    tx_total += sizeof(tx_chunk_0_2);
+    tx_total += sizeof(tx_chunk_1_0);
+
+    PT_ASSERT(serial_state.tx_off == tx_total);
+
+    tx_off += sizeof(tx_chunk_0_0);
+    PT_ASSERT_MEM_EQ(serial_state.tx_buf + tx_off , tx_chunk_0_0, sizeof(tx_chunk_0_0));
+
+    tx_off += sizeof(tx_chunk_0_1);
+    PT_ASSERT_MEM_EQ(serial_state.tx_buf + tx_off , tx_chunk_0_1, sizeof(tx_chunk_0_1));
+
+    tx_off += sizeof(tx_chunk_0_2);
+    PT_ASSERT_MEM_EQ(serial_state.tx_buf + tx_off , tx_chunk_0_2, sizeof(tx_chunk_0_2));
+
+    tx_off += sizeof(tx_chunk_1_0);
+    PT_ASSERT_MEM_EQ(serial_state.tx_buf + tx_off , tx_chunk_1_0, sizeof(tx_chunk_1_0));
+
+}
 
 static void test_smp_serial_read(void)
 {
@@ -1344,6 +1440,7 @@ static void suite_smp_serial_write(void)
 
     pt_add_test(test_smp_serial_write_hello, "Serial port write: Hello", sn);
     pt_add_test(test_smp_serial_write_mgmt_rc, "Serial port write: MGMT RC", sn);
+    pt_add_test(test_smp_serial_write_long, "Serial port write: Long fragmenterd/chunked", sn);
 }
 
 static void suite_smp_serial_read(void)
