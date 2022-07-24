@@ -97,12 +97,13 @@ int serial_transport_write(struct smp_transport *transport, uint8_t *buf, size_t
 {
     uint16_t crc;
     size_t off = 0;
-    size_t boff;
+    size_t txoff;
     size_t blen;
     /* encoded frame */
-    uint8_t enc_tmpbuf[TMP_BUF_SZ];
+    uint8_t txbuf[MCUMGR_SHELL_MAX_FRAME];
+    int rc;
 
-    struct smp_serial_handle *hd = get_handle(transport);
+    const struct smp_serial_handle *hd = get_handle(transport);
 
     /* append crc */
     crc = crc16_ccitt(CRC16_INITIAL_CRC, buf, len);
@@ -118,34 +119,40 @@ int serial_transport_write(struct smp_transport *transport, uint8_t *buf, size_t
         if (off == 0) {
             uint8_t pkt_len_buf[3];
             /* write frame start marker, not base64 */
-            set_be16(enc_tmpbuf, MCUMGR_SHELL_HDR_PKT);
+            set_be16(txbuf, MCUMGR_SHELL_HDR_PKT);
             DBG("len: %zu\n", len);
             set_be16(pkt_len_buf, len);
             pkt_len_buf[2] = buf[0]; /* add first data byte, base64 encoding needs 3 */
-            boff = 2;
+            txoff = 2;
             off = 1;
             /* base64 encoded data starts after frame marker */
-            boff += base64_encode(pkt_len_buf, 3, (char*)&enc_tmpbuf[2], 0);
+            txoff += base64_encode(pkt_len_buf, 3, (char*)&txbuf[2], 0);
             /* remaining len */
             blen = 90;
+            fprintf(stderr, "len 1. data: %d + 5\n", (int)BASE64_ENCODE_SIZE(blen));
+
+            // assert((MCUMGR_SHELL_MAX_FRAME - 5) == (BASE64_ENCODE_SIZE(blen)); /* SOF + pkt_len + newline */
         } else {
-            set_be16(enc_tmpbuf, MCUMGR_SHELL_HDR_DATA);
-            boff = 2;
+            set_be16(txbuf, MCUMGR_SHELL_HDR_DATA);
+            txoff = 2;
             blen = 93;
+            fprintf(stderr, "len 2. data: %d + 3\n", (int)BASE64_ENCODE_SIZE(blen));
+            // assert((MCUMGR_SHELL_MAX_FRAME - 3) == BASE64_ENCODE_SIZE(blen)); /* SOF + newline, crc included in data */
         }
 
         if (blen > len - off) {
             blen = len - off;
         }
-        boff += base64_encode(&buf[off], blen, (char*)&enc_tmpbuf[boff], 1);
+        txoff += base64_encode(&buf[off], blen, (char*)&txbuf[txoff], 1);
         off += blen;
-        enc_tmpbuf[boff++] = '\n';
+        txbuf[txoff++] = '\n';
 
         if (transport->verbose > 1) {
-            ehexdump(enc_tmpbuf, boff, "TX encoded");
+            ehexdump(txbuf, txoff, "TX encoded");
         }
-	    if (port_write_data(hd->port, enc_tmpbuf, boff) < 0) {
-            return -1;
+	    rc = port_write_data(hd->port, txbuf, txoff);
+        if (rc < 0) {
+            return rc;
         }
     }
 
