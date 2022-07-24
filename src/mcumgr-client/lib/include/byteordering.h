@@ -14,7 +14,7 @@ static inline void set_be16(uint8_t *buf, uint16_t val)
     buf[1] = val & 0xff;
 }
 
-static inline uint16_t get_be16(uint8_t *buf)
+static inline uint16_t get_be16(const uint8_t *buf)
 {
     return (buf[0] << 8) | buf[1];
 }
