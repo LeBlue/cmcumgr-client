@@ -34,9 +34,9 @@ struct serial_mock_state {
     size_t rx_off; /* current read offset */
     size_t rx_size; /* combined data size */
 
-    size_t chunk_len[MAX_CHUNKS]; /* length of each chunk */
-    int n_chunks; /* total number of chunks */
-    int chunk; /* current number */
+    size_t rx_chunk_len[MAX_CHUNKS]; /* length of each chunk */
+    int rx_n_chunks; /* total number of chunks */
+    int rx_chunk; /* current number */
 
     /* data that is written to port */
     uint8_t tx_buf[MOCK_BUF_SZ];
@@ -67,7 +67,7 @@ void mock_serial_port_init(void)
 
 void mock_serial_port_rewind(void)
 {
-    serial_state.chunk = 0;
+    serial_state.rx_chunk = 0;
     serial_state.rx_off = 0;
     serial_state.tx_off = 0;
     memset(&serial_state.tx_buf, 0, sizeof(serial_state.tx_buf));
@@ -98,12 +98,12 @@ void mock_add_rx_chunk(const uint8_t *data, size_t sz)
         fprintf(stderr, "Test ERROR: Static buffer too low for test: MOCK_BUF_SZ\n");
         assert(serial_state.rx_size <= MOCK_BUF_SZ);
     }
-    if (serial_state.n_chunks >= MAX_CHUNKS) {
+    if (serial_state.rx_n_chunks >= MAX_CHUNKS) {
         /* abort test */
         fprintf(stderr, "Test ERROR: Static buffer too low for test: MAX_CHUNKS\n");
-        assert(serial_state.n_chunks < MAX_CHUNKS);
+        assert(serial_state.rx_n_chunks < MAX_CHUNKS);
     }
-    serial_state.chunk_len[serial_state.n_chunks++] = sz;
+    serial_state.rx_chunk_len[serial_state.rx_n_chunks++] = sz;
 
     if (sz && data) {
         memcpy(serial_state.rx_buf + serial_state.rx_size - sz, data, sz);
@@ -132,8 +132,8 @@ void mock_rechunk_rx(size_t *chunk_lengths, int num_chunks)
         assert(num_chunks < MAX_CHUNKS);
     }
 
-    for (int i = 0; i < serial_state.n_chunks; ++i) {
-        dsize += serial_state.chunk_len[i];
+    for (int i = 0; i < serial_state.rx_n_chunks; ++i) {
+        dsize += serial_state.rx_chunk_len[i];
     }
 
     for (int i = 0; i < num_chunks; ++i) {
@@ -147,9 +147,9 @@ void mock_rechunk_rx(size_t *chunk_lengths, int num_chunks)
     }
 
     for (int i = 0; i < num_chunks; ++i) {
-        serial_state.chunk_len[i] = chunk_lengths[i];
+        serial_state.rx_chunk_len[i] = chunk_lengths[i];
     }
-    serial_state.n_chunks = num_chunks;
+    serial_state.rx_n_chunks = num_chunks;
 }
 
 #define RX_CHUNK_RESPLIT(_data) \
@@ -204,25 +204,25 @@ int port_read_poll(HANDLE fd, char *buf, size_t maxlen, int end_time, int verbos
         }
 
         /* no more data setup to read */
-        if (serial_state.chunk > serial_state.n_chunks) {
+        if (serial_state.rx_chunk > serial_state.rx_n_chunks) {
             /* since original API waits until something rxed, simulate a timeout */
             return -ETIMEDOUT;
         }
 
-        size_t chunk = serial_state.chunk_len[serial_state.chunk];
+        size_t chunk = serial_state.rx_chunk_len[serial_state.rx_chunk];
 
         if (chunk > 0) {
             if (chunk > maxlen) {
                 chunk = maxlen;
-                serial_state.chunk_len[serial_state.chunk] -= maxlen;
+                serial_state.rx_chunk_len[serial_state.rx_chunk] -= maxlen;
             } else {
-                serial_state.chunk++;
+                serial_state.rx_chunk++;
             }
             memcpy(buf, serial_state.rx_buf + serial_state.rx_off, chunk);
             serial_state.rx_off += chunk;
             return chunk;
         } else {
-            serial_state.chunk++;
+            serial_state.rx_chunk++;
         }
     }
     return -ETIMEDOUT;
