@@ -86,6 +86,16 @@ static inline int base64_encoded_len(int size) {
     return BASE64_ENCODE_SIZE(size);
 }
 
+/**
+ * @brief       Calculate plain data length, for base64 encoded data length
+ *
+ * @param size  Size of base64 encoded data
+ * @return int  Size of unencoded data
+ */
+static inline int base64_data_len(int size) {
+    return BASE64_ENCODE_SIZE(size);
+}
+
 #ifdef __cplusplus
 }
 #endif
