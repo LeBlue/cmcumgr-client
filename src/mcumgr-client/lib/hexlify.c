@@ -24,7 +24,7 @@ int hexlify(const uint8_t *data_buf, size_t data_sz, char *str_buf, size_t str_s
         sprintf(str_buf, "%02x", *data_buf);
     }
     if (i < data_sz) {
-        str_buf = '\0';
+        *str_buf = '\0';
         return -ENOBUFS;
     }
     return 0;
