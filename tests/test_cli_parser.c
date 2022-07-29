@@ -1696,8 +1696,8 @@ static void test_cli_parse_image_test_cmd(void)
         "mcumgr",
         "image",
         "test",
-        "ac352c1f56adcb10292da6e1be6d8672"
-        "acaa7b34323a33b35bdba9aa2583c6e0",
+        ("ac352c1f56adcb10292da6e1be6d8672"
+        "acaa7b34323a33b35bdba9aa2583c6e0"),
     };
     char **argv = build_options(argc, args);
 
