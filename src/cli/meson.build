@@ -18,5 +18,5 @@ mcumgr = executable('mcumgr',
     install : true,
     install_dir : bindir,
     c_args: common_cc_flags,
-    link_args: '-lsystemd', # why U not work with dependencies?
+#    link_args: '-lsystemd', # why U not work with dependencies?
 )
