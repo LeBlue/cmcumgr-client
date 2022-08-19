@@ -76,6 +76,8 @@ int base64_decode_size(const char *str, int len);
 
 #define BASE64_ENCODE_SIZE(__size) (((((__size) - 1) / 3) * 4) + 4)
 
+#define BASE64_DECODED_SIZE(__size) (((((__size) - 1) / 4) * 3) + 3)
+
 /**
  * @brief       Calculate base64 encoded data length, based of plain data length
  *
