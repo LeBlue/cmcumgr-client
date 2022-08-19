@@ -103,8 +103,15 @@ int serial_transport_write(struct smp_transport *transport, uint8_t *buf, size_t
     /* offset in provided buf */
     size_t off = 0;
     int rc;
+    uint16_t mtu;
 
     const struct smp_serial_handle *hd = get_handle(transport);
+
+    mtu = transport->ops->get_mtu(transport);
+    /* fragmenting not supported */
+    if (mtu < len) {
+        return -E2BIG;
+    }
 
     /* append crc */
     crc = crc16_ccitt(CRC16_INITIAL_CRC, buf, len);
