@@ -327,7 +327,7 @@ static int smp_read_pkt_len(const uint8_t *rxbuf, uint8_t *decbuf)
 }
 
 
-#define MIN_PACKET_LEN (BASE64_ENCODE_SIZE(MGMT_HEADER_LEN + 4) + 3)
+#define MIN_PACKET_LEN (BASE64_ENCODED_SIZE(MGMT_HEADER_LEN + 4) + 3)
 
 static int serial_transport_read(struct smp_transport *transport, uint8_t *buf, size_t maxlen)
 {
@@ -439,7 +439,7 @@ static int serial_transport_read(struct smp_transport *transport, uint8_t *buf, 
 
                 if (frame_start == MCUMGR_SHELL_HDR_PKT) {
                     dec_len = 1;
-                    soff = sizeof(frame_start) + BASE64_ENCODE_SIZE(sizeof(fraglen));
+                    soff = sizeof(frame_start) + BASE64_ENCODED_SIZE(sizeof(fraglen));
                 } else if (frame_start == MCUMGR_SHELL_HDR_DATA) {
                     dec_len = boff;
                     soff = sizeof(frame_start);

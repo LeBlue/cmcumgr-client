@@ -74,7 +74,7 @@ int base64_decode_len(const char *str);
  */
 int base64_decode_size(const char *str, int len);
 
-#define BASE64_ENCODE_SIZE(__size) (((((__size) - 1) / 3) * 4) + 4)
+#define BASE64_ENCODED_SIZE(__size) (((((__size) - 1) / 3) * 4) + 4)
 
 #define BASE64_DECODED_SIZE(__size) (((((__size) - 1) / 4) * 3) + 3)
 
@@ -85,7 +85,7 @@ int base64_decode_size(const char *str, int len);
  * @return int  Size of base64 encoded data
  */
 static inline int base64_encoded_len(int size) {
-    return BASE64_ENCODE_SIZE(size);
+    return BASE64_ENCODED_SIZE(size);
 }
 
 /**
@@ -95,7 +95,7 @@ static inline int base64_encoded_len(int size) {
  * @return int  Size of unencoded data
  */
 static inline int base64_data_len(int size) {
-    return BASE64_ENCODE_SIZE(size);
+    return BASE64_ENCODED_SIZE(size);
 }
 
 #ifdef __cplusplus
