@@ -75,8 +75,7 @@ int mock_transport_write(struct smp_transport *t, uint8_t *buf, size_t sz)
 
 
     hd->txbufs[idx].data = malloc(sz);
-    assert(hd->txbufs[idx].data);
-    ASSERT_TEST_MSG(hd->next_tx < (MAX_CHUNKS - 1), "Test mem alloc failed");
+    ASSERT_TEST_MSG(hd->txbufs[idx].data != NULL, "Test mem alloc failed");
 
     memcpy(hd->txbufs[idx].data, buf, hd->txbufs[idx].sz);
 
@@ -121,16 +120,11 @@ void mock_transport_close(struct smp_transport* fh)
 void cleanup_smp_handle(struct smp_mock_handle *hd)
 {
     (void)hd;
-    // for (int idx = 0; idx < hd->n_rx_buf; ++idx)
-    // {
-    //     free(hd->rxbufs[idx].data);
 
-    // }
-
-    // for (int idx = 0; idx < hd->n_tx_buf; ++idx)
-    // {
-    //     free(hd->txbufs[idx].data);
-    // }
+    for (int idx = 0; idx < hd->n_tx_buf; ++idx)
+    {
+        free(hd->txbufs[idx].data);
+    }
 }
 
 
