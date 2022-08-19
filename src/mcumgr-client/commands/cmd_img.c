@@ -231,7 +231,9 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
                 seglenx = room;
             }
         }
-        printf("Using MTU: %d, seg0: %d, segX: %d\n", mtu, (int)seglen0, (int)seglenx);
+        if (transport->verbose) {
+            fprintf(stderr, "Using MTU: %d, seg0: %d, segX: %d\n", mtu, (int)seglen0, (int)seglenx);
+        }
     }
 
     fread_sz = seglen0;
@@ -268,7 +270,7 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
 
     rc = mgmt_img_upload_decode_rsp(buf, sizeof(buf), &state.offs, rsp);
     if (rc) {
-        printf("decode faile rsp 0\n");
+        fprintf(stderr, "decode faile rsp 0\n");
         return rc;
     } else {
         if (rsp->mgmt_rc > 0) {
@@ -277,7 +279,7 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
     }
 
     if (state.offs > sizeof(file_buf)) {
-        printf("Upload continue\n");
+        fprintf(stderr, "Upload continue\n");
     }
 
     while (state.offs < req->image.file_sz) {
@@ -292,7 +294,7 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
         fread_sz = seglen;
         rc = req->reader.op->read(req->reader.fh, file_buf, &fread_sz, state.offs);
         if (rc < 0) {
-            printf("File read fail at %d\n", (int)state.offs);
+            fprintf(stderr, "File read fail at %d\n", (int)state.offs);
             return rc;
         }
 
@@ -327,10 +329,10 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
         rc = mgmt_img_upload_decode_rsp(buf, sizeof(buf), &state.offs, rsp);
         if (rc) {
             if (rsp->mgmt_rc > 0) {
-                printf("Mgmt err rsp X: %d\n", (int) rsp->mgmt_rc);
+                fprintf(stderr, "Mgmt err rsp X: %d\n", (int) rsp->mgmt_rc);
                 return 0;
             } else {
-                printf("decode failed rsp X\n");
+                fprintf(stderr, "decode failed rsp X\n");
             }
             return rc;
         }
@@ -352,4 +354,3 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
 
     return 0;
 }
-
