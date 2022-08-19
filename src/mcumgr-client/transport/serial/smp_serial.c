@@ -84,7 +84,11 @@ void serial_transport_close(struct smp_transport *transport)
 
 #define MCUMGR_SHELL_HDR_PKT          0x0609
 #define MCUMGR_SHELL_HDR_DATA         0x0414
+/* Maximum data in one frame */
 #define MCUMGR_SHELL_MAX_FRAME        127
+
+/* Maximum unencoded data that fits one frame */
+#define MCUMGR_SHELL_MAX_DATA         (BASE64_DECODED_SIZE(MCUMGR_SHELL_MAX_FRAME - 3))
 
 #define BYTE1(_num) ((uint8_t)(((_num) >> 8) & 0xff))
 #define SOF_BITS ((uint8_t)(BYTE1(MCUMGR_SHELL_HDR_DATA) | BYTE1(MCUMGR_SHELL_HDR_PKT)))
@@ -96,13 +100,11 @@ void serial_transport_close(struct smp_transport *transport)
 int serial_transport_write(struct smp_transport *transport, uint8_t *buf, size_t len)
 {
     uint16_t crc;
+    /* offset in provided buf */
     size_t off = 0;
-    size_t boff;
-    size_t blen;
-    /* encoded frame */
-    uint8_t enc_tmpbuf[TMP_BUF_SZ];
+    int rc;
 
-    struct smp_serial_handle *hd = get_handle(transport);
+    const struct smp_serial_handle *hd = get_handle(transport);
 
     /* append crc */
     crc = crc16_ccitt(CRC16_INITIAL_CRC, buf, len);
@@ -115,37 +117,46 @@ int serial_transport_write(struct smp_transport *transport, uint8_t *buf, size_t
     }
 
     while (off < len) {
+        /* encoded frame and offset */
+        uint8_t txbuf[MCUMGR_SHELL_MAX_FRAME];
+        size_t txoff;
+        /* unencoded data that fits into frame */
+        size_t blen = MCUMGR_SHELL_MAX_DATA;
+
         if (off == 0) {
             uint8_t pkt_len_buf[3];
             /* write frame start marker, not base64 */
-            set_be16(enc_tmpbuf, MCUMGR_SHELL_HDR_PKT);
+            set_be16(txbuf, MCUMGR_SHELL_HDR_PKT);
+            txoff = 2;
             DBG("len: %zu\n", len);
             set_be16(pkt_len_buf, len);
-            pkt_len_buf[2] = buf[0]; /* add first data byte, base64 encoding needs 3 */
-            boff = 2;
+
+            /* add first data byte, base64 encoding needs 3 */
+            pkt_len_buf[2] = buf[0];
             off = 1;
             /* base64 encoded data starts after frame marker */
-            boff += base64_encode(pkt_len_buf, 3, (char*)&enc_tmpbuf[2], 0);
+            txoff += base64_encode(pkt_len_buf, sizeof(pkt_len_buf), (char*)&txbuf[txoff], 0);
+
             /* remaining len */
-            blen = 90;
+            blen -= 3;
         } else {
-            set_be16(enc_tmpbuf, MCUMGR_SHELL_HDR_DATA);
-            boff = 2;
-            blen = 93;
+            set_be16(txbuf, MCUMGR_SHELL_HDR_DATA);
+            txoff = 2;
         }
 
-        if (blen > len - off) {
+        if (blen > (len - off)) {
             blen = len - off;
         }
-        boff += base64_encode(&buf[off], blen, (char*)&enc_tmpbuf[boff], 1);
+        txoff += base64_encode(&buf[off], blen, (char*)&txbuf[txoff], 1);
         off += blen;
-        enc_tmpbuf[boff++] = '\n';
+        txbuf[txoff++] = '\n';
 
         if (transport->verbose > 1) {
-            ehexdump(enc_tmpbuf, boff, "TX encoded");
+            ehexdump(txbuf, txoff, "TX encoded");
         }
-	    if (port_write_data(hd->port, enc_tmpbuf, boff) < 0) {
-            return -1;
+	    rc = port_write_data(hd->port, txbuf, txoff);
+        if (rc < 0) {
+            return rc;
         }
     }
 
