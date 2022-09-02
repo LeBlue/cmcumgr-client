@@ -12,7 +12,7 @@
 #include "cli_opts.h"
 #include "hexlify.h"
 
-#include "mcumgr-client/mcuboot_img.h"
+#include "mcuboot_img.h"
 
 #ifdef __GLIBC__
 #define OPTSTR "+:"

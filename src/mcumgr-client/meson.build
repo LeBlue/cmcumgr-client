@@ -52,22 +52,68 @@ if get_option('enable-serial')
     src_mcumgr += 'transport'/'serial'/'serial_port_unix.c'
 endif
 
+mcumgr_lib_name = 'mcumgr-client'
+
 libmcumgr = static_library(
-    'mcumgr-client',
+    mcumgr_lib_name,
     sources: src_mcumgr,
     dependencies: [ utils_dep, cbor_dep, mcumgr_deps ],
     include_directories: [
         'lib'/'include',
-        '..'/'include',
-        'mgmt',
+        'include'/'mcumgr-client',
         'transport',
     ],
-    c_args: common_cc_flags
+    c_args: common_cc_flags,
+    install: true
+)
+
+libmcumgr_shared = shared_library(
+    mcumgr_lib_name,
+    sources: src_mcumgr,
+    dependencies: [ utils_dep, cbor_dep, mcumgr_deps ],
+    include_directories: [
+        'lib'/'include',
+        'include'/'mcumgr-client',
+        'transport',
+    ],
+    c_args: common_cc_flags,
+    install: true
 )
 
 mcumgr_dep = declare_dependency(
     link_with: libmcumgr,
-    include_directories: ['..'/'include', 'lib/include'],
+    include_directories: ['include', 'lib/include'],
     dependencies: [ mcumgr_deps ]
 )
+
+install_headers(
+    [
+        'include'/'mcumgr-client'/'cmd_img.h',
+        'include'/'mcumgr-client'/'cmd_os.h',
+        'include'/'mcumgr-client'/'file_reader.h',
+        'include'/'mcumgr-client'/'file_reader_unix.h',
+        'include'/'mcumgr-client'/'mcuboot_img.h',
+        'include'/'mcumgr-client'/'mcumgr-client.h',
+        'include'/'mcumgr-client'/'mgmt.h',
+        'include'/'mcumgr-client'/'mgmt_hdr.h',
+        'include'/'mcumgr-client'/'mgmt_img.h',
+        'include'/'mcumgr-client'/'mgmt_os.h',
+        'include'/'mcumgr-client'/'mgmt_utils.h',
+        'include'/'mcumgr-client'/'smp_serial.h',
+        'include'/'mcumgr-client'/'smp_transport.h'
+    ],
+    subdir: 'mcumgr-client'
+)
+
+
+pkg = import('pkgconfig')
+pkg.generate(
+  name: mcumgr_lib_name,
+  description: 'mcumgr client library',
+  libraries: libmcumgr_shared,
+  libraries_private: [],
+  version: meson.project_version(),
+)
+
+
 

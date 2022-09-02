@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "byteordering.h"
+#include "mcumgr-client.h"
 #include "mgmt_hdr.h"
 
 struct mgmt_hdr {
@@ -175,9 +176,9 @@ void mgmt_header_update_seq(uint8_t *buf, uint8_t seq)
  * @param buf buffer with a mgmt message. Must be valid.
  * @param seq new sequential number to set
  */
-uint8_t mgmt_header_get_seq(uint8_t *buf)
+uint8_t mgmt_header_get_seq(const uint8_t *buf)
 {
-	struct mgmt_hdr *nh;
+	const struct mgmt_hdr *nh;
 
 	nh = (struct mgmt_hdr *)buf;
 	return nh->nh_seq;

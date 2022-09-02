@@ -18,7 +18,7 @@
 #define MOCK_BUF_SZ 2048
 #define MAX_CHUNKS 20
 
-#include "mcumgr-client/mcumgr-client.h"
+#include "mcumgr-client.h"
 
 static void test_cmd_os_reset(void)
 {

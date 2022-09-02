@@ -18,10 +18,8 @@
 #include "ptest/ptest.h"
 #include "utils_test.h"
 
-#include "mcumgr-client/mcumgr-client.h"
+#include "mcumgr-client.h"
 
-/* test internal API */
-#include "mgmt_hdr.h"
 
 #define CBOR_BUF_SZ 512
 

@@ -11,13 +11,9 @@
 #include "ptest/ptest.h"
 #include "utils_test.h"
 
-#include "mcumgr-client/mcumgr-client.h"
-
-/* test internal API */
-// #include "mgmt_hdr.h"
+#include "mcumgr-client.h"
 
 #define CBOR_BUF_SZ 512
-
 
 
 static const uint8_t fw_data[20] = "0123456789" "0123456789";

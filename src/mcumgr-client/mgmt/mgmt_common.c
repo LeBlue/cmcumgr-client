@@ -8,7 +8,7 @@
 
 #include "mgmt_common.h"
 
-#include "mcumgr-client/mcumgr-client.h"
+#include "mcumgr-client.h"
 #include "mgmt_hdr.h"
 
 #include "byteordering.h"

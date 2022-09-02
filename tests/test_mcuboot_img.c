@@ -7,8 +7,8 @@
 
 #include "ptest/ptest.h"
 #include "utils_test.h"
-#include "mcumgr-client/mcuboot_img.h"
-#include "mcumgr-client/file_reader_unix.h"
+#include "mcuboot_img.h"
+#include "file_reader_unix.h"
 
 static const char test_bin[] = "mcuboot_image.bin";
 static const char test_bin_trunc[] = "mcuboot_image_trunc_1.bin";

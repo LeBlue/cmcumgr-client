@@ -22,9 +22,9 @@
 
 #include "byteordering.h"
 
-#include "mcumgr-client/smp_transport.h"
+#include "smp_transport.h"
 #include "serial_port.h"
-#include "mcumgr-client/smp_serial.h"
+#include "smp_serial.h"
 
 #define PRDBG 0
 #if PRDBG

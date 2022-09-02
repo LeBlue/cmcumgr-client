@@ -13,8 +13,8 @@
 #include "ptest/ptest.h"
 #include "utils_test.h"
 
-#include "mcumgr-client/smp_serial.h"
-#include "mcumgr-client/smp_transport.h"
+#include "smp_serial.h"
+#include "smp_transport.h"
 
 /* mock serial port */
 #include "serial_port.h"

@@ -124,7 +124,8 @@ void mgmt_header_update_seq(uint8_t *buf, uint8_t seq);
  * @param buf buffer with a mgmt message. Must be valid.
  * @param seq new sequential number to set
  */
-uint8_t mgmt_header_get_seq(uint8_t *buf);
+uint8_t mgmt_header_get_seq(const uint8_t *buf);
+
 
 #ifdef __cplusplus
 }

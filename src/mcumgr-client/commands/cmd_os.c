@@ -7,8 +7,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "mcumgr-client/mgmt_os.h"
-#include "mcumgr-client/smp_transport.h"
+#include "mgmt_os.h"
+#include "smp_transport.h"
 #include "cmd_common.h"
 #include "utils.h"
 

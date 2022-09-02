@@ -13,7 +13,7 @@ endif
 
 mcumgr = executable('mcumgr',
     sources: src_cli,
-    include_directories : [],
+    include_directories : ['..'/'mcumgr-client'/'include'/'mcumgr-client' ],
     dependencies: [ mcumgr_dep, utils_dep],
     install : true,
     install_dir : bindir,

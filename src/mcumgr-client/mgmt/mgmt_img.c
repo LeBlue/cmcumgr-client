@@ -10,10 +10,11 @@
 
 #include "cbor.h"
 
-#include "mgmt_hdr.h"
 #include "mgmt_common.h"
-#include "mcumgr-client/mgmt.h"
-#include "mcumgr-client/mgmt_img.h"
+#include "mgmt.h"
+#include "mgmt_hdr.h"
+#include "mgmt_img.h"
+
 
 
 #define PRDBG 0

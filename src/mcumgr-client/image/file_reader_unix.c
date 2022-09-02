@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "mcumgr-client/file_reader_unix.h"
+#include "file_reader_unix.h"
 
 
 static int file_open_impl(struct file_handle* fh)

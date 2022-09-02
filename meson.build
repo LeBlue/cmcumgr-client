@@ -91,7 +91,7 @@ if get_option('enable-tests') == true
     )
 
     dir_mcumgr = 'src'/'mcumgr-client'
-    inc_mcumgr = 'src'/'include'
+    inc_mcumgr = 'src'/'mcumgr-client'/'include'/'mcumgr-client'
     dir_cli = 'src'/'cli'
 
     test_file_reader_unix = executable('test-file-reader-unix',
@@ -135,7 +135,7 @@ if get_option('enable-tests') == true
         sources: [ 'tests'/'test_cbor.c' ],
         dependencies: [ ptest_dep, utils_dep, mcumgr_dep ],
         c_args: common_cc_flags,
-        include_directories: [ join_paths(dir_mcumgr, 'mgmt')]
+        include_directories: [ inc_mcumgr ]
     )
     test('test-cbor', test_cbor)
 
@@ -159,7 +159,7 @@ if get_option('enable-tests') == true
         ],
         include_directories : [
             inc_mcumgr,
-            join_paths(dir_mcumgr, 'mgmt'),
+            # join_paths(dir_mcumgr, 'mgmt'),
             join_paths(dir_mcumgr, 'transport'/'serial')
         ],
         dependencies: [ ptest_dep, utils_dep ],
@@ -194,6 +194,7 @@ if get_option('enable-tests') == true
     test_mgmt_img_upload = executable('test-mgmt-img-upload',
         sources: [ 'tests'/'test_mgmt_img_upload.c' ],
         dependencies: [ ptest_dep, utils_dep, mcumgr_dep ],
+        include_directories: [inc_mcumgr],
         c_args: common_cc_flags,
     )
     test('test-mgmt-img-upload', test_mgmt_img_upload)
@@ -213,6 +214,7 @@ if get_option('enable-tests') == true
     test_cmd_os = executable('test-cmd-os',
         sources: [ 'tests'/'test_cmd_os.c' ],
         dependencies: [ ptest_dep, utils_dep, mcumgr_dep, mock_transport_dep ],
+        include_directories: [inc_mcumgr],
         c_args: common_cc_flags,
     )
     test('test-cmd-os', test_cmd_os)
@@ -220,6 +222,7 @@ if get_option('enable-tests') == true
     test_cmd_img = executable('test-cmd-img',
         sources: [ 'tests'/'test_cmd_img.c' ],
         dependencies: [ ptest_dep, utils_dep, mcumgr_dep, mock_transport_dep ],
+        include_directories: [inc_mcumgr],
         c_args: common_cc_flags,
     )
     test('test-cmd-img', test_cmd_img)

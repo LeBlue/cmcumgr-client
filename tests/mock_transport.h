@@ -11,7 +11,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "mcumgr-client/smp_transport.h"
+#include "smp_transport.h"
 
 #define MOCK_BUF_SZ 2048
 #define MAX_CHUNKS 20

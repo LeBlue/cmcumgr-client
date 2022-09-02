@@ -9,7 +9,7 @@
 
 #include "cmd_common.h"
 #include "utils.h"
-#include "mcumgr-client/smp_transport.h"
+#include "smp_transport.h"
 
 int cmd_run(struct smp_transport *transport, uint8_t *buf, size_t reqsz, size_t bufsz)
 {

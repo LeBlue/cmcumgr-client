@@ -26,4 +26,5 @@ struct image_version {
 
 int mgmt_decode_err_rsp(const uint8_t *buf, size_t sz, int64_t *mgmt_err);
 
+
 #endif

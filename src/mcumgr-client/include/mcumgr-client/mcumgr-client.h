@@ -15,6 +15,7 @@
 /* include these as API */
 #include "mgmt.h"
 #include "mcuboot_img.h"
+#include "mgmt_hdr.h"
 #include "mgmt_img.h"
 #include "mgmt_os.h"
 #include "mgmt_utils.h"

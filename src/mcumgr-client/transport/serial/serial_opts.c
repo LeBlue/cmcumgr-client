@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <errno.h>
 
-#include "mcumgr-client/smp_serial.h"
+#include "smp_serial.h"
 
 int parse_serial_connstring(const char* connstring, struct serial_opts *ser_opts)
 {

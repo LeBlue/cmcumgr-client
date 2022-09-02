@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include "mcumgr-client/mgmt_utils.h"
+#include "mgmt_utils.h"
 #include "hexlify.h"
 
 /**
