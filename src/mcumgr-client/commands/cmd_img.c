@@ -182,7 +182,8 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
 
     state.progress.size = req->image.file_sz;
 
-    rc = req->reader.op->open(req->reader.fh);
+    /* TODO: close */
+    rc = file_reader_open(&req->reader);
 
     if (rc) {
         return rc;
@@ -237,7 +238,7 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
     }
 
     fread_sz = seglen0;
-    rc = req->reader.op->read(req->reader.fh, file_buf, &fread_sz, 0);
+    rc = file_reader_read(&req->reader, file_buf, &fread_sz, 0);
     if (rc < 0) {
         return rc;
     }
@@ -292,7 +293,8 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
         }
 
         fread_sz = seglen;
-        rc = req->reader.op->read(req->reader.fh, file_buf, &fread_sz, state.offs);
+        rc = file_reader_read(&req->reader, file_buf, &fread_sz, state.offs);
+
         if (rc < 0) {
             fprintf(stderr, "File read fail at %d\n", (int)state.offs);
             return rc;

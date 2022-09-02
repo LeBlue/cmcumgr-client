@@ -26,4 +26,10 @@ struct file_reader {
     const struct file_operations *op;
 };
 
+
+int file_reader_open(struct file_reader *fr);
+int file_reader_close(struct file_reader *fr);
+int file_reader_read(struct file_reader *fr, uint8_t *buf, size_t *sz, size_t off);
+int file_reader_is_valid(struct file_reader *fr);
+
 #endif

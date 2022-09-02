@@ -110,6 +110,7 @@ if get_option('enable-tests') == true
         sources: [
             'tests'/'test_mcuboot_img_internal.c',
             join_paths(dir_mcumgr, 'image'/'file_reader_unix.c'),
+            join_paths(dir_mcumgr, 'image'/'file_reader.c'),
         ],
         include_directories : [ inc_mcumgr, 'src'/'mcumgr-client'/'image' ],
         dependencies: [ ptest_dep, utils_dep ],
@@ -121,6 +122,7 @@ if get_option('enable-tests') == true
         sources: [
             'tests'/'test_mcuboot_img.c',
             join_paths(dir_mcumgr, 'image'/'file_reader_unix.c'),
+            join_paths(dir_mcumgr, 'image'/'file_reader.c'),
             join_paths(dir_mcumgr, 'image'/'mcuboot_img.c'),
         ],
         include_directories : [ inc_mcumgr ],

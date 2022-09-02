@@ -41,6 +41,7 @@ src_mcumgr = [
     'mgmt'/'mgmt_img.c',
     'mgmt'/'mgmt_os.c',
     'image'/'mcuboot_img.c',
+    'image'/'file_reader.c',
     'commands'/'cmd_common.c',
     'commands'/'cmd_os.c',
     'commands'/'cmd_img.c',

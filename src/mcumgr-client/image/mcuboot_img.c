@@ -144,10 +144,10 @@ int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *i
 {
     int rc;
     size_t readlen;
-    if (!reader || !reader->fh || !image_info) {
+    if (!reader || !image_info) {
         return -EINVAL;
     }
-    rc = reader->op->open(reader->fh);
+    rc = file_reader_open(reader);
     if (rc) {
         return rc;
     }
@@ -155,7 +155,7 @@ int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *i
     /* read image header */
     struct mcuboot_image_hdr img_hdr;
     readlen = sizeof(img_hdr);
-    rc = reader->op->read(reader->fh, (uint8_t*) &img_hdr, &readlen, 0);
+    rc = file_reader_read(reader, (uint8_t*) &img_hdr, &readlen, 0);
     if (rc < 0) {
         return rc;
     } else if (readlen) {
@@ -179,7 +179,7 @@ int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *i
     struct mcuboot_image_tlv_info tlv_info;
     readlen = sizeof(tlv_info);
 
-    rc = reader->op->read(reader->fh, (uint8_t*) &tlv_info, &readlen, tlv_info_offset);
+    rc = file_reader_read(reader, (uint8_t*) &tlv_info, &readlen, tlv_info_offset);
     if (rc < 0) {
         goto err_close;
     } else if (rc < (int)sizeof(tlv_info)) {
@@ -200,7 +200,7 @@ int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *i
     while (tlv_off < tlv_end) {
         struct mcuboot_image_tlv tlv_hdr;
         readlen = sizeof(tlv_hdr);
-        rc = reader->op->read(reader->fh, (uint8_t*) &tlv_hdr, &readlen, tlv_off);
+        rc = file_reader_read(reader, (uint8_t*) &tlv_hdr, &readlen, tlv_off);
         if (rc < 0) {
             goto err_close;
         } else if (rc < (int)sizeof(tlv_hdr)) {
@@ -218,7 +218,7 @@ int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *i
             {
                 if (tlv_data_len == sizeof(image_info->hash)) {
                     readlen = sizeof(image_info->hash);
-                    rc = reader->op->read(reader->fh, image_info->hash, &readlen, tlv_off);
+                    rc = file_reader_read(reader, image_info->hash, &readlen, tlv_off);
                     if (rc < 0) {
                         goto err_close;
                     } else if (rc < tlv_data_len) {
@@ -236,7 +236,7 @@ int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *i
                 if (tlv_data_len > 0) {
                     uint8_t tmpbuf;
                     readlen = 1;
-                    rc = reader->op->read(reader->fh, &tmpbuf, &readlen, tlv_off + tlv_data_len - 1);
+                    rc = file_reader_read(reader, &tmpbuf, &readlen, tlv_off + tlv_data_len - 1);
                     if (rc < 0) {
                         goto err_close;
                     } else if (rc < 1) {
@@ -253,7 +253,7 @@ int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *i
 
     rc = 0;
 err_close:
-    reader->op->close(reader->fh);
+    file_reader_close(reader);
 
     return rc;
 }
