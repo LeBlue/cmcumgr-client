@@ -4,7 +4,6 @@ bindir = prefixdir / get_option('bindir')
 src_cli = [
     'main.c',
     'cli_opts.c',
-    '..'/'mcumgr-client'/'image'/'file_reader_unix.c',
 ]
 
 if get_option('enable-serial')
