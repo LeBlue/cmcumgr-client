@@ -539,7 +539,7 @@ int mgmt_img_decode_confirm_rsp(const uint8_t *buf, size_t sz, struct mgmt_image
 
 
 ssize_t mgmt_create_image_upload_seg0_req(uint8_t *buf, size_t sz,
-    size_t fw_sz, const uint8_t *fw_data, const uint8_t *fw_sha, size_t seglen)
+	size_t fw_sz, const uint8_t *fw_data, const uint8_t *fw_sha, size_t seglen)
 {
 	int rc;
 	CborEncoder enc;
@@ -662,7 +662,7 @@ ssize_t mgmt_image_calc_data_size_seqX(int mtu, uint32_t file_sz, uint32_t chunk
 
 
 ssize_t mgmt_create_image_upload_segX_req(uint8_t *buf, size_t sz,
-    size_t off, const uint8_t *data, size_t seglen)
+	size_t off, const uint8_t *data, size_t seglen)
 {
 	int rc;
 	CborEncoder enc;
@@ -716,7 +716,7 @@ int mgmt_img_upload_decode_rsp(const uint8_t *buf, size_t sz, size_t *off, struc
 	CborValue val;
 	int rc;
 	int64_t val64;
-	int64_t rsp_off = 0;
+	int64_t rsp_off = -1;
 
 	rc = mgmt_header_len_check(buf, sz);
 	if (rc) {
@@ -734,6 +734,8 @@ int mgmt_img_upload_decode_rsp(const uint8_t *buf, size_t sz, size_t *off, struc
 	if (rc) {
 		return rc;
 	}
+
+	rsp->mgmt_rc = -1;
 
 	while (!cbor_value_at_end(&val)) {
 		if (cbor_value_get_type(&val) != CborTextStringType) {
