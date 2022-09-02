@@ -146,27 +146,6 @@ struct upload_state {
     size_t offs;
 };
 
-
-static int cbor_len_overhead(size_t len)
-{
-    if (len < 24) {
-        return 0;
-    }
-    if (len < 256) {
-        return 1;
-    }
-    if (len < 65535) {
-        return 2;
-    }
-    /* do not expect bigger values */
-    return 4;
-}
-
-static int cbor_enc_overhead(size_t offset, size_t seglen)
-{
-    return cbor_len_overhead(offset) + cbor_len_overhead(seglen);
-}
-
 int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_upload_req *req, struct mgmt_rc *rsp, upload_progress_fn cb)
 {
     uint8_t buf[CMD_BUF_SZ];
@@ -197,40 +176,21 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
     if (transport->ops->get_mtu) {
         int mtu = transport->ops->get_mtu(transport);
         if (mtu > 0) {
-            size_t room;
-            int enc_overhead;
-            /* Calculate space for data
-               Create initial request with minimal data (0 bytes) */
-            cnt = mgmt_create_image_upload_seg0_req(buf, sizeof(buf), req->image.file_sz, file_buf, req->image.hash, 0);
+            /* Calculate space for data first request */
+            cnt = mgmt_image_calc_data_size_seq0(mtu, req->image.file_sz, sizeof(file_buf));
             if (cnt < 0) {
-                fprintf(stderr, "message encoding issue %zu\n", cnt);
+                fprintf(stderr, "Failed to calculate data length/pkt: %zu\n", cnt);
                 return (int)cnt;
             }
-            enc_overhead = cbor_enc_overhead(0, sizeof(file_buf));
-            if (cnt + enc_overhead > (ssize_t) mtu) {
-                fprintf(stderr, "MTU %d is too small\n", mtu);
-            }
-            room = mtu - cnt - enc_overhead; /* account for data length field */
-            if (room > sizeof(file_buf)) {
-                seglen0 = sizeof(file_buf);
-            } else {
-                seglen0 = room;
-            }
-            /* create follow up request with minimal data (0 bytes)
-               use the maximum offset to account for increasing length of encoded offset integer
-            */
-            cnt = mgmt_create_image_upload_segX_req(buf, sizeof(buf), 0, file_buf, 0);
-            if (cnt < 0) {
-                fprintf(stderr, "message encoding issue %zu\n", cnt);
-                return (int)cnt;
-            }
+            seglen0 = cnt;
 
-            room = mtu - cnt;
-            if (room > sizeof(file_buf)) {
-                seglenx = sizeof(file_buf);
-            } else {
-                seglenx = room;
+            /* Calculate space for data followup request */
+            cnt = mgmt_image_calc_data_size_seqX(mtu, req->image.file_sz, sizeof(file_buf));
+            if (cnt < 0) {
+                fprintf(stderr, "Failed to calculate data length/pkt: %zu\n", cnt);
+                return (int)cnt;
             }
+            seglenx = cnt;
         }
         if (transport->verbose) {
             fprintf(stderr, "Using MTU: %d, seg0: %d, segX: %d\n", mtu, (int)seglen0, (int)seglenx);
@@ -286,10 +246,10 @@ int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_
     while (state.offs < req->image.file_sz) {
 
         size_t seglen;
-        if (req->image.file_sz - state.offs < seglenx - cbor_enc_overhead(state.offs, seglenx)) {
+        if (req->image.file_sz - state.offs < seglenx - mgmt_image_calc_encode_overhead(state.offs, seglenx)) {
             seglen = req->image.file_sz - state.offs;
         } else {
-            seglen = seglenx - cbor_enc_overhead(state.offs, seglenx);
+            seglen = seglenx - mgmt_image_calc_encode_overhead(state.offs, seglenx);
         }
 
         fread_sz = seglen;
