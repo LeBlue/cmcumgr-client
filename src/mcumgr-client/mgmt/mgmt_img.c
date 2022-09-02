@@ -575,6 +575,92 @@ ssize_t mgmt_create_image_upload_seg0_req(uint8_t *buf, size_t sz,
 	return len + MGMT_HEADER_LEN;
 }
 
+static int cbor_array_len_overhead(size_t len)
+{
+	if (len < 24) {
+		return 0;
+	}
+	if (len < 256) {
+		return 1;
+	}
+	if (len < 65535) {
+		return 2;
+	}
+	/* do not expect bigger values */
+	return 4;
+}
+
+size_t mgmt_image_calc_encode_overhead(size_t offset, size_t seglen)
+{
+	return cbor_array_len_overhead(offset) + cbor_array_len_overhead(seglen);
+}
+
+
+ssize_t mgmt_image_calc_data_size_seq0(int mtu, uint32_t file_sz, uint32_t chunk_max)
+{
+	uint8_t buf[512];
+	ssize_t cnt;
+	ssize_t seglen;
+	const uint8_t dummy_hash[MGMT_IMAGE_HASH_SIZE] = {0};
+
+	size_t room;
+	int enc_overhead;
+	/* Calculate space for data
+	   Create initial request with minimal data (0 bytes) */
+	cnt = mgmt_create_image_upload_seg0_req(buf, sizeof(buf), file_sz, NULL, dummy_hash, 0);
+	if (cnt < 0) {
+		return (ssize_t)cnt;
+	}
+	/* worst case bound, normally second parameter should be the max data chunk length we are caclulating,
+	   This can never be bigger than MTU
+	 */
+	enc_overhead = mgmt_image_calc_encode_overhead(0, mtu);
+	if (cnt + enc_overhead > (ssize_t) mtu) {
+		return -EOVERFLOW;
+	}
+	/* account for header, base payload and data length field */
+	room = mtu - cnt - enc_overhead;
+	if (chunk_max && (room > chunk_max)) {
+		seglen = chunk_max;
+	} else {
+		seglen = room;
+	}
+	return seglen;
+}
+
+
+ssize_t mgmt_image_calc_data_size_seqX(int mtu, uint32_t file_sz, uint32_t chunk_max)
+{
+	uint8_t buf[512];
+	ssize_t cnt;
+	ssize_t seglen;
+
+	size_t room;
+	int enc_overhead;
+	/* Calculate space for data
+	   Create initial request with minimal data (0 bytes) */
+	cnt = mgmt_create_image_upload_segX_req(buf, sizeof(buf), 0, NULL, 0);
+	if (cnt < 0) {
+		return (ssize_t)cnt;
+	}
+	/* worst case bound, normally second parameter should be the max data chunk length we are caclulating,
+	   This can never be bigger than MTU
+	 */
+	enc_overhead = mgmt_image_calc_encode_overhead(file_sz, mtu);
+	if (cnt + enc_overhead > (ssize_t) mtu) {
+		return -EOVERFLOW;
+	}
+	/* account for header, base payload and data length field */
+	room = mtu - cnt - enc_overhead;
+	if (chunk_max && (room > chunk_max)) {
+		seglen = chunk_max;
+	} else {
+		seglen = room;
+	}
+	return seglen;
+}
+
+
 ssize_t mgmt_create_image_upload_segX_req(uint8_t *buf, size_t sz,
     size_t off, const uint8_t *data, size_t seglen)
 {
