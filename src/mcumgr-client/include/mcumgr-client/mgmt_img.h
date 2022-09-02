@@ -15,6 +15,9 @@
 #include "mcuboot_img.h"
 #include "file_reader.h"
 
+
+#define MGMT_IMAGE_HASH_SIZE IMAGE_HASH_SIZE
+
 /* image update common */
 struct mgmt_slot_state {
     struct image_version version;
@@ -25,7 +28,7 @@ struct mgmt_slot_state {
     uint8_t confirmed;
     uint8_t permanent;
 
-    uint8_t hash[32];
+    uint8_t hash[MGMT_IMAGE_HASH_SIZE];
 };
 
 
@@ -53,7 +56,7 @@ int mgmt_img_decode_list_rsp(const uint8_t *buf, size_t sz, struct mgmt_image_st
 
 /* image test */
 struct mgmt_image_test_req {
-    uint8_t fw_sha[32];
+    uint8_t fw_sha[MGMT_IMAGE_HASH_SIZE];
     bool confirm;
 };
 

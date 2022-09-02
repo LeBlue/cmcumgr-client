@@ -33,9 +33,9 @@ int image_version_to_str(char *vbuf, const struct image_version *version)
     return 0;
 }
 
-int image_hash_to_str(char *hbuf, const uint8_t hash[32])
+int image_hash_to_str(char *hbuf, const uint8_t hash[IMAGE_HASH_SIZE])
 {
-    hexlify(hash, 32, hbuf, IMAGE_HASH_STR_MAX);
+    hexlify(hash, IMAGE_HASH_SIZE, hbuf, IMAGE_HASH_STR_MAX);
     return 0;
 }
 
