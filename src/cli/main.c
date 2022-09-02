@@ -40,7 +40,7 @@ void print_usage_or_error(struct cli_options *copts, int rc)
                 exit(0);
             }
             break;
-        case -ENODATA:
+        case CLI_MISSING_ARGUMENT:
             if (copts->optopt) {
                 fprintf(stderr, "Missing option argument to '-%c'\n", copts->optopt);
             } else if (copts->cmd) {
@@ -50,7 +50,7 @@ void print_usage_or_error(struct cli_options *copts, int rc)
             }
             exit(1);
 
-        case -E2BIG:
+        case CLI_ACCESS_ARGUMENTS:
             if (copts->argv && copts->argv[0]) {
                 fprintf(stderr, "Access argument(s) after: %s\n", copts->argv[0]);
             } else {
@@ -62,12 +62,12 @@ void print_usage_or_error(struct cli_options *copts, int rc)
             /* bug here in parsing code */
             fprintf(stderr, "Options parsing failed\n");
             exit(1);
-        case -ENOENT:
+        case CLI_UNRECOGNIZED_OPTION:
         {
             const char *errmsg;
             const char *optstr;
             char tmpstr[] = "-?";
-            if (copts->optopt || copts->argv[0][0] == '-') {
+            if (copts->optopt || (copts->argv[0][0] == '-')) {
                 errmsg = "Unrecognized option";
                 if (copts->optopt) {
                     tmpstr[1] = (char)copts->optopt;
@@ -86,14 +86,14 @@ void print_usage_or_error(struct cli_options *copts, int rc)
             }
             exit(1);
         }
-        case -ENOMSG:
+        case CLI_MISSING_COMMAND:
             if (copts->cmd) {
                 fprintf(stderr, "Missing subcommand for '%s'\n", copts->cmd);
             } else {
                 fprintf(stderr, "Missing subcommand\n");
             }
             exit(1);
-        case -EBADMSG:
+        case CLI_INVALID_ARGUMENT:
             if (copts->argv) {
                 fprintf(stderr, "Invalid format for argument '%s'\n", copts->argv[0]);
             } else {

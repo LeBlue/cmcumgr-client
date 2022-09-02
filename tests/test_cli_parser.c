@@ -125,7 +125,7 @@ static void test_cli_parse_common_unknown(void)
     optind = 0;
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENOENT);
+    PT_ASSERT(rc == CLI_UNRECOGNIZED_OPTION);
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 0);
     PT_ASSERT(copts.help == 0);
@@ -154,7 +154,7 @@ static void test_cli_parse_common_unknown_long(void)
     optind = 0;
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENOENT);
+    PT_ASSERT(rc == CLI_UNRECOGNIZED_OPTION);
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 0);
     PT_ASSERT(copts.help == 0);
@@ -188,7 +188,7 @@ static void test_cli_parse_common_verbose_1(void)
     optind = 0;
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENOMSG); /* missing commmand */
+    PT_ASSERT(rc == CLI_MISSING_COMMAND); /* missing commmand */
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 0);
@@ -218,7 +218,7 @@ static void test_cli_parse_common_verbose_2(void)
     optind = 0;
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENOMSG); /* missing commmand */
+    PT_ASSERT(rc == CLI_MISSING_COMMAND); /* missing commmand */
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 2);
     PT_ASSERT(copts.help == 0);
@@ -246,7 +246,7 @@ static void test_cli_parse_common_verbose_3(void)
     optind = 0;
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENOMSG); /* missing commmand */
+    PT_ASSERT(rc == CLI_MISSING_COMMAND); /* missing commmand */
 
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 2);
@@ -279,7 +279,7 @@ static void test_cli_parse_common_all(void)
     optind = 0;
     int rc = parse_cli_options(argc, argv, &copts);
 
-    // PT_ASSERT(rc == -ENOMSG); /* missing commmand */
+    // PT_ASSERT(rc == CLI_MISSING_COMMAND); /* missing commmand */
     PT_ASSERT(rc == 0); /* -h ignores miising command */
 
     PT_ASSERT(copts.version == 1);
@@ -311,7 +311,7 @@ static void test_cli_parse_common_connstring(void)
     optind = 0;
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENOMSG); /* missing commmand */
+    PT_ASSERT(rc == CLI_MISSING_COMMAND); /* missing commmand */
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 2);
     PT_ASSERT(copts.help == 0);
@@ -342,7 +342,7 @@ static void test_cli_parse_common_connstring_2(void)
     optind = 0;
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENOMSG); /* missing commmand */
+    PT_ASSERT(rc == CLI_MISSING_COMMAND); /* missing commmand */
 
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 2);
@@ -374,7 +374,7 @@ static void test_cli_parse_common_connstring_3(void)
     optind = 0;
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENOMSG); /* missing commmand */
+    PT_ASSERT(rc == CLI_MISSING_COMMAND); /* missing commmand */
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 2);
     PT_ASSERT(copts.help == 0);
@@ -405,7 +405,7 @@ static void test_cli_parse_common_connstring_4(void)
     optind = 0;
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENOMSG); /* missing commmand */
+    PT_ASSERT(rc == CLI_MISSING_COMMAND); /* missing commmand */
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 2);
     PT_ASSERT(copts.help == 0);
@@ -436,7 +436,7 @@ static void test_cli_parse_common_connstring_5(void)
     optind = 0;
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENOMSG); /* missing commmand */
+    PT_ASSERT(rc == CLI_MISSING_COMMAND); /* missing commmand */
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 2);
     PT_ASSERT(copts.help == 0);
@@ -503,7 +503,7 @@ static void test_cli_parse_common_cmd_w_arg(void)
     optind = 0;
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENOENT);
+    PT_ASSERT(rc == CLI_UNRECOGNIZED_OPTION);
     PT_ASSERT(copts.optopt == 'v');
 
     PT_ASSERT(copts.version == 0);
@@ -560,7 +560,7 @@ static void test_cli_parse_common_missing_optarg_c(void)
     struct cli_options copts;
 
     int rc = parse_cli_options(argc, argv, &copts);
-    PT_ASSERT(rc == -ENODATA);
+    PT_ASSERT(rc == CLI_MISSING_ARGUMENT);
 }
 
 
@@ -572,7 +572,7 @@ static void test_cli_parse_common_missing_optarg_t(void)
     struct cli_options copts;
 
     int rc = parse_cli_options(argc, argv, &copts);
-    PT_ASSERT(rc == -ENODATA);
+    PT_ASSERT(rc == CLI_MISSING_ARGUMENT);
 }
 
 
@@ -584,7 +584,7 @@ static void test_cli_parse_common_missing_optarg_s(void)
     struct cli_options copts;
 
     int rc = parse_cli_options(argc, argv, &copts);
-    PT_ASSERT(rc == -ENODATA);
+    PT_ASSERT(rc == CLI_MISSING_ARGUMENT);
 }
 
 
@@ -596,8 +596,8 @@ static void test_cli_parse_common_missing_arg(void)
     struct cli_options copts;
 
     int rc = parse_cli_options(argc, argv, &copts);
-    /* TODO: return -ENODATA?*/
-    PT_ASSERT(rc == -ENOMSG);
+    /* TODO: return CLI_MISSING_ARGUMENT?*/
+    PT_ASSERT(rc == CLI_MISSING_COMMAND);
     // PT_ASSERT(rc == 0);
 }
 
@@ -609,7 +609,7 @@ static void test_cli_parse_common_unrecognized_option(void)
     struct cli_options copts;
 
     int rc = parse_cli_options(argc, argv, &copts);
-    PT_ASSERT(rc == -ENOENT);
+    PT_ASSERT(rc == CLI_UNRECOGNIZED_OPTION);
 }
 
 static void test_cli_parse_common_unrecognized_command(void)
@@ -620,7 +620,7 @@ static void test_cli_parse_common_unrecognized_command(void)
     struct cli_options copts;
 
     int rc = parse_cli_options(argc, argv, &copts);
-    PT_ASSERT(rc == -ENOENT);
+    PT_ASSERT(rc == CLI_UNRECOGNIZED_OPTION);
 }
 
 
@@ -974,7 +974,7 @@ static void test_cli_parse_echo_cmd_w_access_arg(void)
 
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -E2BIG);
+    PT_ASSERT(rc == CLI_ACCESS_ARGUMENTS);
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 0);
@@ -1022,7 +1022,7 @@ static void test_cli_parse_echo_cmd_w_missing_arg(void)
 
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENODATA);
+    PT_ASSERT(rc == CLI_MISSING_ARGUMENT);
     PT_ASSERT(copts.optopt == 0); /* not a option argumetn missing */
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
@@ -1251,7 +1251,7 @@ static void test_cli_parse_full_reset_cmd_w_access_arg(void)
 
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -E2BIG);
+    PT_ASSERT(rc == CLI_ACCESS_ARGUMENTS);
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 0);
@@ -1401,7 +1401,7 @@ static void test_cli_parse_full_image_cmd(void)
 
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENOMSG); /* -ENOENT ? */
+    PT_ASSERT(rc == CLI_MISSING_COMMAND); /* -ENOENT ? */
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 0);
@@ -1521,7 +1521,7 @@ static void test_cli_parse_full_image_cmd_w_access_arg(void)
 
     int rc = parse_cli_options(argc, argv, &copts);
 
-    PT_ASSERT(rc == -ENOENT);
+    PT_ASSERT(rc == CLI_UNRECOGNIZED_OPTION);
     PT_ASSERT(copts.version == 0);
     PT_ASSERT(copts.verbose == 1);
     PT_ASSERT(copts.help == 0);

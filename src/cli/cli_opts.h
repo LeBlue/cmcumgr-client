@@ -9,6 +9,15 @@
 #include "mgmt_img.h"
 #include "mgmt_os.h"
 
+
+#define CLI_UNRECOGNIZED_OPTION -ENOENT
+#define CLI_MISSING_ARGUMENT -ENODATA
+#define CLI_MISSING_COMMAND -ENOMSG
+#define CLI_ACCESS_ARGUMENTS -E2BIG
+/* EINVAL is used for API usage error, this one is invalid cli option argument */
+#define CLI_INVALID_ARGUMENT -EBADMSG
+
+
 typedef enum subcommand {
     CMD_NONE = 0,
     CMD_IMAGE,

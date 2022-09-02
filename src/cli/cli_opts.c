@@ -36,14 +36,6 @@ static void reset_getopt(void)
 }
 
 
-#define UNRECOGNIZED_OPTION -ENOENT
-#define MISSING_ARGUMENT -ENODATA
-#define MISSING_COMMAND -ENOMSG
-#define ACCESS_ARGUMENTS -E2BIG
-/* EINVAL is used for API usage error, this one is invalid cli option argument */
-#define INVALID_ARGUMENT -EBADMSG
-
-
 
 /**
  * @brief strip leading '=' from option arg
@@ -77,7 +69,7 @@ static int get_int_optarg(const char *arg, int *num)
     if (ret == 1) {
         return 0;
     }
-    return INVALID_ARGUMENT;
+    return CLI_INVALID_ARGUMENT;
 }
 
 struct longopt {
@@ -174,9 +166,9 @@ int assign_common_opts(struct cli_options *copts, int optc)
             return 0;
         case '?':
             copts->optopt = optopt;
-            return UNRECOGNIZED_OPTION;
+            return CLI_UNRECOGNIZED_OPTION;
         case ':':
-            return MISSING_ARGUMENT;
+            return CLI_MISSING_ARGUMENT;
         default:
             return -EINVAL;
     }
@@ -226,7 +218,7 @@ static int parse_common_options(struct cli_options *copts)
             if (!lo) {
                 copts->argc = argc - (optind - 1);
                 copts->argv += (optind - 1);
-                return UNRECOGNIZED_OPTION;
+                return CLI_UNRECOGNIZED_OPTION;
             }
             opt = lo->opt;
             if (lo->arg_num) {
@@ -234,7 +226,7 @@ static int parse_common_options(struct cli_options *copts)
                 if (!arg) {
                     copts->argc = argc - optind;
                     copts->argv += optind;
-                    return MISSING_ARGUMENT;
+                    return CLI_MISSING_ARGUMENT;
                 }
             }
         }
@@ -280,9 +272,9 @@ static int parse_commmon_positional_args(struct cli_options *copts, int nargs)
     }
     /* unxpected arg */
     if (copts->argc > 0) {
-        return ACCESS_ARGUMENTS;
+        return CLI_ACCESS_ARGUMENTS;
     } else if (argn < nargs) {
-        ret =  MISSING_ARGUMENT;
+        ret = CLI_MISSING_ARGUMENT;
     }
     copts->argv = NULL;
     return ret;
@@ -308,7 +300,7 @@ static int parse_common_options_no_args(struct cli_options *copts)
         return ret;
     }
     if (copts->argc) {
-        return ACCESS_ARGUMENTS;
+        return CLI_ACCESS_ARGUMENTS;
     }
 
     return 0;
@@ -327,14 +319,14 @@ static int parse_image_test_opts(struct cli_options *copts)
     }
 
     if ((strlen(copts->cmdopts.positional.arg[0]) + 1) != IMAGE_HASH_STR_MAX) {
-        return INVALID_ARGUMENT;
+        return CLI_INVALID_ARGUMENT;
     }
     copts->cmdopts.img_test.confirm = false;
     ret = unhexlify(copts->cmdopts.positional.arg[0],
                     copts->cmdopts.img_test.fw_sha,
                     sizeof(copts->cmdopts.img_test.fw_sha));
     if (ret != sizeof(copts->cmdopts.img_test.fw_sha)) {
-        return INVALID_ARGUMENT;
+        return CLI_INVALID_ARGUMENT;
     }
     return 0;
 }
@@ -374,7 +366,7 @@ static int parse_subcommand_options(const struct subcmd *subs, struct cli_option
         }
     }
     /* found unrecognized command */
-    return UNRECOGNIZED_OPTION;
+    return CLI_UNRECOGNIZED_OPTION;
 }
 
 static int parse_image_opts(struct cli_options *copts)
@@ -395,7 +387,7 @@ static int parse_image_opts(struct cli_options *copts)
 
     /* got no command */
     if (copts->argc <= 0) {
-        return MISSING_COMMAND;
+        return CLI_MISSING_COMMAND;
     }
     return parse_subcommand_options(imgcmds, copts);
 }
@@ -438,7 +430,7 @@ static int parse_mcumgr_options(struct cli_options *copts)
             if (!lo) {
                 copts->argc = argc - (optind - 1);
                 copts->argv += (optind - 1);
-                return UNRECOGNIZED_OPTION;
+                return CLI_UNRECOGNIZED_OPTION;
             }
             opt = lo->opt;
             if (lo->arg_num) {
@@ -446,7 +438,7 @@ static int parse_mcumgr_options(struct cli_options *copts)
                 if (!arg) {
                     copts->argc = argc - optind;
                     copts->argv += optind;
-                    return MISSING_ARGUMENT;
+                    return CLI_MISSING_ARGUMENT;
                 }
             }
         }
@@ -494,11 +486,11 @@ static int parse_mcumgr_options(struct cli_options *copts)
             case '?':
                 /* unrecognized option */
                 copts->optopt = optopt;
-                return UNRECOGNIZED_OPTION;
+                return CLI_UNRECOGNIZED_OPTION;
             case ':':
                 /* missing required arg */
                 copts->optopt = optopt;
-                return MISSING_ARGUMENT;
+                return CLI_MISSING_ARGUMENT;
             default: /* '?' */
                 return -EINVAL;
         }
@@ -515,7 +507,7 @@ static int parse_mcumgr_options(struct cli_options *copts)
         copts->argv = NULL;
         /* no command */
         copts->subcmd = CMD_NONE;
-        return MISSING_COMMAND;
+        return CLI_MISSING_COMMAND;
     }
 
     return parse_subcommand_options(subcmds, copts);
@@ -529,12 +521,13 @@ static int parse_mcumgr_options(struct cli_options *copts)
  * @param argv  Arguments
  * @param copts Where to store parsed options
  *
- * @retval       0  parsing success
- * @retval -EINVAL  invalid argument provided (API usage error)
- * @retval -ENOENT  unrecognized option or (sub)command
- * @retval -ENODATA missing option argument.
- * @retval -E2BIG   access argument
- * @retval -ENOMSG  missing required argument
+ * @retval 0                         parsing success
+ * @retval -EINVAL                   invalid argument provided (API usage error)
+ * @retval CLI_UNRECOGNIZED_OPTION   unrecognized option or (sub)command
+ * @retval CLI_MISSING_ARGUMENT      missing option argument.
+ * @retval CLI_ACCESS_ARGUMENTS      access argument
+ * @retval CLI_MISSING_COMMAND       missing required argument or (sub)command
+ * @retval CLI_INVALID_ARGUMENT      option argument or positional argument is malformed/out of range
  *
  */
 int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
