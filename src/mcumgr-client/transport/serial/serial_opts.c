@@ -29,6 +29,23 @@ static const struct transport_option smp_serial_options[] = {
     [SMP_SERIAL_OPT_SPEED] = { "baud", "115200", "serial port baud rate" },
 };
 
+void print_serial_options(void)
+{
+    const int padlen = 20;
+
+    for (size_t idx = 0; idx < (sizeof(smp_serial_options)/sizeof(smp_serial_options[0])); ++idx) {
+        int len = strlen(smp_serial_options[idx].token);
+
+        if (len >= padlen) len = 0; else len = padlen - len;
+
+        if (smp_serial_options[idx].default_value) {
+            fprintf(stderr, "   %s  %*s%s (%s)\n", smp_serial_options[idx].token, len, "", smp_serial_options[idx].help, smp_serial_options[idx].default_value);
+        } else {
+            fprintf(stderr, "   %s  %*s%s\n", smp_serial_options[idx].token, len, "", smp_serial_options[idx].help);
+        }
+    }
+}
+
 int parse_serial_connstring(const char* connstring, struct serial_opts *ser_opts)
 {
     const char *const token[] = {

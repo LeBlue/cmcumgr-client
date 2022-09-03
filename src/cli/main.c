@@ -33,10 +33,15 @@ void print_usage_or_error(struct cli_options *copts, int rc)
                 printf("%s\n", VERSION);
                 exit(0);
             } else if (copts->help) {
-                if (copts->subcmd == CMD_NONE)
+                if (copts->subcmd == CMD_NONE) {
                     usage_mcumgr(copts->prgname);
-                else
+                    if (copts->conntype && (0 == strcmp(copts->conntype, "serial"))) {
+                        printf("transport options (--conntype=serial):\n");
+                        print_serial_options();
+                    }
+                } else {
                     usage_subcommand(copts->prgname, copts->subcmd);
+                }
                 exit(0);
             }
             break;

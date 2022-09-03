@@ -19,7 +19,7 @@ struct smp_serial_handle {
 };
 
 int serial_transport_init(struct smp_transport *transport, struct smp_serial_handle *hd, struct serial_opts *sopts);
-
+void print_serial_options(void);
 int parse_serial_connstring(const char* connstring, struct serial_opts *ser_opts);
 
 #endif
