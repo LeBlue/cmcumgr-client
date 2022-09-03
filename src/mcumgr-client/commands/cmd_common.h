@@ -12,8 +12,6 @@
 
 struct smp_transport;
 
-#define CMD_BUF_SZ 512
-
 #ifdef __cplusplus
 extern "C" {
 #endif

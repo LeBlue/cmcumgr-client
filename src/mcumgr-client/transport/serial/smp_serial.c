@@ -95,8 +95,6 @@ void serial_transport_close(struct smp_transport *transport)
 
 #define MAYBE_FRAME_START(_byte) (((uint8_t)(~(SOF_BITS)) ^ (_byte)) & SOF_BITS)
 
-#define TMP_BUF_SZ 512
-
 int serial_transport_write(struct smp_transport *transport, uint8_t *buf, size_t len)
 {
     uint16_t crc;

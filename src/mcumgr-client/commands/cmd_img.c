@@ -3,11 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
-#define TXBUF_SZ 2100
-#define FIRST_SEG_TMO 16
-#define NEXT_SEG_TMO 1
-
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -24,7 +19,7 @@
 
 int cmd_img_run_image_list(struct smp_transport *transport, struct mgmt_image_state_rsp *rsp)
 {
-    uint8_t buf[CMD_BUF_SZ];
+    uint8_t buf[MGMT_MAX_MTU];
     ssize_t cnt;
     int rc, buflen;
 
@@ -56,7 +51,7 @@ int cmd_img_run_image_list(struct smp_transport *transport, struct mgmt_image_st
 
 int cmd_img_run_image_test(struct smp_transport *transport, struct mgmt_image_test_req *req, struct mgmt_image_state_rsp *rsp)
 {
-    uint8_t buf[CMD_BUF_SZ];
+    uint8_t buf[MGMT_MAX_MTU];
     ssize_t cnt;
     int rc, buflen;
 
@@ -89,7 +84,7 @@ int cmd_img_run_image_test(struct smp_transport *transport, struct mgmt_image_te
 
 int cmd_img_run_image_confirm(struct smp_transport *transport, struct mgmt_image_state_rsp *rsp)
 {
-    uint8_t buf[CMD_BUF_SZ];
+    uint8_t buf[MGMT_MAX_MTU];
     ssize_t cnt;
     int rc, buflen;
 
@@ -122,7 +117,7 @@ int cmd_img_run_image_confirm(struct smp_transport *transport, struct mgmt_image
 
 int cmd_img_run_image_erase(struct smp_transport *transport, struct mgmt_rc *rsp)
 {
-    uint8_t buf[CMD_BUF_SZ];
+    uint8_t buf[MGMT_MAX_MTU];
     ssize_t cnt;
 
     cnt = mgmt_create_image_erase_req(buf, sizeof(buf));
@@ -148,7 +143,7 @@ struct upload_state {
 
 int cmd_img_run_image_upload(struct smp_transport *transport, struct mgmt_image_upload_req *req, struct mgmt_rc *rsp, upload_progress_fn cb)
 {
-    uint8_t buf[CMD_BUF_SZ];
+    uint8_t buf[MGMT_MAX_MTU];
     ssize_t cnt;
     struct upload_state state = {0};
     int rc, buflen;

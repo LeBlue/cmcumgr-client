@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define MGMT_MAX_MTU 1024
+
 /* common functions and definitions */
 struct mgmt_rc {
     int64_t mgmt_rc;

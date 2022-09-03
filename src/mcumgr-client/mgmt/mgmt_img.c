@@ -598,13 +598,17 @@ size_t mgmt_image_calc_encode_overhead(size_t offset, size_t seglen)
 
 ssize_t mgmt_image_calc_data_size_seq0(int mtu, uint32_t file_sz, uint32_t chunk_max)
 {
-	uint8_t buf[512];
+	uint8_t buf[MGMT_MAX_MTU];
 	ssize_t cnt;
 	ssize_t seglen;
 	const uint8_t dummy_hash[MGMT_IMAGE_HASH_SIZE] = {0};
 
 	size_t room;
 	int enc_overhead;
+
+	if (mtu > MGMT_MAX_MTU) {
+		return -EINVAL;
+	}
 	/* Calculate space for data
 	   Create initial request with minimal data (0 bytes) */
 	cnt = mgmt_create_image_upload_seg0_req(buf, sizeof(buf), file_sz, NULL, dummy_hash, 0);
@@ -631,12 +635,16 @@ ssize_t mgmt_image_calc_data_size_seq0(int mtu, uint32_t file_sz, uint32_t chunk
 
 ssize_t mgmt_image_calc_data_size_seqX(int mtu, uint32_t file_sz, uint32_t chunk_max)
 {
-	uint8_t buf[512];
+	uint8_t buf[MGMT_MAX_MTU];
 	ssize_t cnt;
 	ssize_t seglen;
 
 	size_t room;
 	int enc_overhead;
+
+	if (mtu > MGMT_MAX_MTU) {
+		return -EINVAL;
+	}
 	/* Calculate space for data
 	   Create initial request with minimal data (0 bytes) */
 	cnt = mgmt_create_image_upload_segX_req(buf, sizeof(buf), 0, NULL, 0);

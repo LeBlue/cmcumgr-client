@@ -14,7 +14,7 @@
 
 int cmd_os_run_echo(struct smp_transport *transport, const struct mgmt_echo_req *req, struct mgmt_echo_rsp *rsp)
 {
-    uint8_t buf[CMD_BUF_SZ];
+    uint8_t buf[MGMT_MAX_MTU];
     ssize_t cnt;
     int rc, buflen;
 
@@ -46,7 +46,7 @@ int cmd_os_run_echo(struct smp_transport *transport, const struct mgmt_echo_req 
 
 int cmd_os_run_reset(struct smp_transport *transport, struct mgmt_rc *rsp)
 {
-    uint8_t buf[CMD_BUF_SZ];
+    uint8_t buf[MGMT_MAX_MTU];
     ssize_t cnt;
     int rc, buflen;
 
