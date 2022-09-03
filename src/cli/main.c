@@ -148,6 +148,9 @@ void print_mgmt_error(uint64_t mgmt_rc)
         case MGMT_ERR_ECORRUPT:
             mgmt_rc_str = "ECORRUPT";
             break;
+        case MGMT_ERR_EBUSY:
+            mgmt_rc_str = "EBUSY";
+            break;
         default:
             break;
     }
