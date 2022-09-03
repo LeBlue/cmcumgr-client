@@ -13,15 +13,27 @@
 
 #include "smp_serial.h"
 
+enum SMP_SERIAL_OPTION {
+    SMP_SERIAL_OPT_DEV = 0,
+    SMP_SERIAL_OPT_SPEED,
+};
+
+struct transport_option {
+    const char *token;
+    const char *default_value;
+    const char *help;
+};
+
+static const struct transport_option smp_serial_options[] = {
+    [SMP_SERIAL_OPT_DEV]   = { "dev", NULL, "serial port" },
+    [SMP_SERIAL_OPT_SPEED] = { "baud", "115200", "serial port baud rate" },
+};
+
 int parse_serial_connstring(const char* connstring, struct serial_opts *ser_opts)
 {
-    enum {
-        DEV_OPT = 0,
-        SPEED_OPT,
-    };
     const char *const token[] = {
-        [DEV_OPT]   = "dev",
-        [SPEED_OPT] = "baud",
+        [SMP_SERIAL_OPT_DEV]   = smp_serial_options[SMP_SERIAL_OPT_DEV].token,
+        [SMP_SERIAL_OPT_SPEED] = smp_serial_options[SMP_SERIAL_OPT_SPEED].token,
         NULL
     };
 
@@ -43,14 +55,14 @@ int parse_serial_connstring(const char* connstring, struct serial_opts *ser_opts
     while (*subopts != '\0' && !errfnd) {
 
         switch (getsubopt(&subopts, (char *const *) token, &value)) {
-            case DEV_OPT:
+            case SMP_SERIAL_OPT_DEV:
                 ser_opts->port_name = value;
                 break;
 
-            case SPEED_OPT:
+            case SMP_SERIAL_OPT_SPEED:
                 if (value == NULL) {
                     fprintf(stderr, "Missing value for "
-                    "suboption '%s'\n", token[SPEED_OPT]);
+                    "suboption '%s'\n", token[SMP_SERIAL_OPT_SPEED]);
                     return -EINVAL;
                 }
 
@@ -69,7 +81,7 @@ int parse_serial_connstring(const char* connstring, struct serial_opts *ser_opts
     }
 
     if (!ser_opts->port_name) {
-        fprintf(stderr, "Missing serial option '%s'\n", token[DEV_OPT]);
+        fprintf(stderr, "Missing serial option '%s'\n", token[SMP_SERIAL_OPT_DEV]);
         return -ENODATA;
     }
 
