@@ -13,7 +13,7 @@
 
 #include "mcumgr-client.h"
 
-#define CBOR_BUF_SZ 512
+#define CBOR_BUF_SZ MGMT_MAX_MTU
 
 
 static const uint8_t fw_data[20] = "0123456789" "0123456789";

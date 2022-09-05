@@ -21,7 +21,7 @@
 #include "mcumgr-client.h"
 
 
-#define CBOR_BUF_SZ 512
+#define CBOR_BUF_SZ MGMT_MAX_MTU
 
 
 static void test_mgmt_is_rsp_read(void)
