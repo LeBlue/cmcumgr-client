@@ -498,7 +498,7 @@ static int parse_mcumgr_options(struct cli_options *copts)
     copts->argc = argc - optind;
     copts->argv = argv + optind;
 
-    if (copts->help) {
+    if (copts->help || copts->version) {
         return 0;
     }
 
