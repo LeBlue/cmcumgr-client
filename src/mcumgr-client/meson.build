@@ -78,6 +78,7 @@ libmcumgr_shared = shared_library(
         'include'/'mcumgr-client',
         'transport',
     ],
+    version: meson.project_version(),
     c_args: common_cc_flags,
     install: true
 )
