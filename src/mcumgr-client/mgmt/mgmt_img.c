@@ -109,7 +109,7 @@ ssize_t mgmt_create_image_test_req(uint8_t *buf, size_t sz, struct mgmt_image_te
 
 	rc = cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
 	rc |= cbor_encode_text_stringz(&map, "hash");
-	rc |= cbor_encode_byte_string(&map, req->fw_sha, 32);
+	rc |= cbor_encode_byte_string(&map, req->fw_sha, MGMT_IMAGE_HASH_SIZE);
 
 	if (req->confirm) {
 		rc |= cbor_encode_text_stringz(&map, "confirm");
@@ -556,7 +556,7 @@ ssize_t mgmt_create_image_upload_seg0_req(uint8_t *buf, size_t sz,
 	rc = cbor_encoder_create_map(&enc, &map, CborIndefiniteLength);
 
 	rc |= cbor_encode_text_stringz(&map, "sha");
-	rc |= cbor_encode_byte_string(&map, fw_sha, 32);
+	rc |= cbor_encode_byte_string(&map, fw_sha, MGMT_IMAGE_HASH_SIZE);
 	rc |= cbor_encode_text_stringz(&map, "off");
 	rc |= cbor_encode_uint(&map, 0);
 	rc |= cbor_encode_text_stringz(&map, "len");
