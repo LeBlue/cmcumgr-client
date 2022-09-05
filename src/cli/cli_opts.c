@@ -395,9 +395,9 @@ static int parse_image_opts(struct cli_options *copts)
 
 static const struct subcmd subcmds[] = {
     CMD_DEF_SUB("image", CMD_IMAGE, parse_image_opts, NULL, "Manage firmware on a device", imgcmds),
-    CMD_DEF("echo", CMD_ECHO, parse_echo_opts, "Send a text string to a device and print the response"),
+    CMD_DEF_ARGS("echo", CMD_ECHO, parse_echo_opts, "Send a text string to a device and print the response", "TEXT"),
     CMD_DEF("reset", CMD_RESET, parse_common_options_no_args, "Reset a device"),
-    CMD_DEF("analyze", CMD_IMAGE_INFO, parse_analyze_opts, "Verify and print information of a firmware image file"),
+    CMD_DEF_ARGS("analyze", CMD_IMAGE_INFO, parse_analyze_opts, "Verify and print information of a firmware image file", "FILE"),
     CMD_DEF_END
 };
 
