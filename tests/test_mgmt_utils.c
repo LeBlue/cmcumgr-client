@@ -80,6 +80,69 @@ static const char hash_str[] = "ac352c1f56adcb10292da6e1be6d8672"
                                "acaa7b34323a33b35bdba9aa2583c6e0";
 
 
+static void test_image_hash_str_to_buf(void)
+{
+    uint8_t hash_buf[33];
+    memset(hash_buf, 0, 33);
+
+    int ret = image_hash_str_to_buf(hash_buf, hash_str);
+
+    PT_ASSERT(ret == 0);
+    PT_ASSERT_MEM_EQ(hash_buf, hash, 32);
+    PT_ASSERT(hash_buf[32] == '\0');
+}
+
+static void test_image_hash_str_to_buf_too_short(void)
+{
+    uint8_t hash_buf[33];
+    memset(hash_buf, 0, 33);
+
+    int ret = image_hash_str_to_buf(hash_buf, hash_str + 2);
+
+    PT_ASSERT(ret == -EINVAL);
+    PT_ASSERT(hash_buf[32] == '\0');
+}
+
+static void test_image_hash_str_to_buf_too_short_uneven(void)
+{
+    uint8_t hash_buf[33];
+    memset(hash_buf, 0, 33);
+
+    int ret = image_hash_str_to_buf(hash_buf, hash_str + 1);
+
+    PT_ASSERT(ret == -EINVAL);
+    PT_ASSERT(hash_buf[32] == '\0');
+}
+
+
+static void test_image_hash_str_to_buf_too_long(void)
+{
+    uint8_t hash_buf[33];
+    memset(hash_buf, 0, 33);
+    const char hash_str_long[] = "ac352c1f56adcb10292da6e1be6d8672"
+                                 "acaa7b34323a33b35bdba9aa2583c6e012";
+
+    int ret = image_hash_str_to_buf(hash_buf, hash_str_long);
+
+    PT_ASSERT(ret == -EINVAL);
+    PT_ASSERT(hash_buf[32] == '\0');
+}
+
+
+static void test_image_hash_str_to_buf_too_long_uneven(void)
+{
+    uint8_t hash_buf[33];
+    memset(hash_buf, 0, 33);
+    const char hash_str_long[] = "ac352c1f56adcb10292da6e1be6d8672"
+                                 "acaa7b34323a33b35bdba9aa2583c6e01";
+
+    int ret = image_hash_str_to_buf(hash_buf, hash_str_long);
+
+    PT_ASSERT(ret == -EINVAL);
+    PT_ASSERT(hash_buf[32] == '\0');
+}
+
+
 static void test_image_parse_hash(void)
 {
     uint8_t hash_buf[33];
@@ -202,6 +265,11 @@ static void suite_img_parse_utils(void)
     const char *sn = "Suite MCUboot image parsing utils";
 
     pt_add_test(test_image_parse_hash, "Test parse hash str to binary: OK", sn);
+    pt_add_test(test_image_hash_str_to_buf, "Test parse hash str to binary wrapper: OK", sn);
+    pt_add_test(test_image_hash_str_to_buf_too_short, "Test parse hash str to binary wrapper: too short", sn);
+    pt_add_test(test_image_hash_str_to_buf_too_short_uneven, "Test parse hash str to binary wrapper: too short uneven", sn);
+    pt_add_test(test_image_hash_str_to_buf_too_long, "Test parse hash str to binary wrapper: too long", sn);
+    pt_add_test(test_image_hash_str_to_buf_too_long_uneven, "Test parse hash str to binary wrapper: too long uneven", sn);
     pt_add_test(test_image_parse_hash_short_buf, "Test pring hash str to binary: OK", sn);
     pt_add_test(test_image_parse_hash_invalid_char_1, "Test pring hash str to binary: invalid char: Fail", sn);
     pt_add_test(test_image_parse_hash_invalid_char_2, "Test pring hash str to binary: invalid char: Fail", sn);
