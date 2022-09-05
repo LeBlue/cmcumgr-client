@@ -48,7 +48,7 @@ struct smp_sd_bluez_handle {
 };
 
 int sd_bluez_transport_init(struct smp_transport *transport, struct smp_sd_bluez_handle *hd, struct sd_bluez_opts *sopts);
-
+void print_sd_bluez_options(void);
 int parse_sd_bluez_connstring(const char* connstring, struct sd_bluez_opts *ser_opts);
 
 #endif
