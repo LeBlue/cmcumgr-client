@@ -24,6 +24,7 @@ int image_version_to_str(char *vbuf, const struct image_version *version);
 
 #define IMAGE_HASH_STR_MAX 65
 int image_hash_to_str(char *hbuf, const uint8_t hash[IMAGE_HASH_SIZE]);
+int image_hash_str_to_buf(uint8_t hash[IMAGE_HASH_SIZE], const char *hash_str);
 
 
 int mcuboot_image_file_parse(struct file_reader *reader, struct mcuboot_image *image_info);

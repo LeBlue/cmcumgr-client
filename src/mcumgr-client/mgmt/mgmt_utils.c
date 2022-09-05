@@ -39,6 +39,24 @@ int image_hash_to_str(char *hbuf, const uint8_t hash[IMAGE_HASH_SIZE])
     return 0;
 }
 
+int image_hash_str_to_buf(uint8_t hash[IMAGE_HASH_SIZE], const char *hash_str)
+{
+    int ret;
+
+    if (strlen(hash_str) != (IMAGE_HASH_SIZE * 2)) {
+        return -EINVAL;
+    }
+
+    ret = unhexlify(hash_str, hash, IMAGE_HASH_SIZE);
+
+    if (ret == IMAGE_HASH_SIZE) {
+        ret = 0;
+    } else if (ret >= 0) {
+        ret = -EINVAL;
+    }
+    return ret;
+}
+
 
 #define MEMCPY_FLAG(_flag, _buf, _off, _len) \
     do { \
