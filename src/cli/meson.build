@@ -10,7 +10,7 @@ if get_option('enable-serial')
     src_cli += '..'/'mcumgr-client'/'transport'/'serial'/'serial_opts.c'
 endif
 
-mcumgr = executable('mcumgr',
+mcumgr = executable('cmcumgr',
     sources: src_cli,
     include_directories : ['..'/'mcumgr-client'/'include'/'mcumgr-client' ],
     dependencies: [ mcumgr_dep, utils_dep],

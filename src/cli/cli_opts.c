@@ -549,7 +549,7 @@ int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
 }
 
 static const struct subcmd mcumgr[] = {
-    CMD_DEF_SUB("mcumgr", CMD_NONE, parse_mcumgr_options, cli_longopts, "Manage devices", subcmds),
+    CMD_DEF_SUB("cmcumgr", CMD_NONE, parse_mcumgr_options, cli_longopts, "Manage devices", subcmds),
     CMD_DEF_END
 };
 

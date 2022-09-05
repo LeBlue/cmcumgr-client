@@ -54,7 +54,7 @@ if get_option('enable-serial')
     src_mcumgr += 'transport'/'serial'/'serial_port_unix.c'
 endif
 
-mcumgr_lib_name = 'mcumgr-client'
+mcumgr_lib_name = 'cmcumgr-client'
 
 libmcumgr = static_library(
     mcumgr_lib_name,
