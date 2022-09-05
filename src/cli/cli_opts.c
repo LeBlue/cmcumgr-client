@@ -538,7 +538,6 @@ int parse_cli_options(int argc, char *const *argv, struct cli_options *copts)
 
     /* defaults */
     memset(copts, 0, sizeof(*copts));
-    copts->conntype = "serial";
     copts->argc = argc;
     copts->argv = argv;
     opterr = 0;

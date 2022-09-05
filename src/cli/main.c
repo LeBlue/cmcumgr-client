@@ -31,9 +31,18 @@ void print_usage_or_error(struct cli_options *copts, int rc)
             } else if (copts->help) {
                 if (copts->subcmd == CMD_NONE) {
                     usage_mcumgr(copts->prgname);
-                    if (copts->conntype && (0 == strcmp(copts->conntype, "serial"))) {
-                        printf("transport options (--conntype=serial):\n");
-                        print_serial_options();
+                    if (copts->conntype) {
+                        if (0 == strcmp(copts->conntype, "serial")) {
+                            printf("\ntransport options (--conntype=serial):\n");
+                            print_serial_options();
+                        } else if (0 == strcmp(copts->conntype, "ble")) {
+                            printf("\ntransport options (--conntype=ble):\n");
+                            print_sd_bluez_options();
+                        } else {
+                            printf("\nSupported transports (--conntype):\n   ble\n   serial\n");
+                        }
+                    } else {
+                        printf("\nSupported transports (--conntype):\n   ble\n   serial\n");
                     }
                 } else {
                     usage_subcommand(copts->prgname, copts->subcmd);
