@@ -1,0 +1,36 @@
+#!/bin/sh
+
+ret=0
+failed=""
+ok=""
+
+ptests="@PTESTS@"
+test_path="$(cd "$(dirname "${0}")"; pwd)"
+
+for _ptest in $ptests; do
+        if "${test_path}/${_ptest}"; then
+                ok="${ok} ${_ptest}"
+                echo "PASS: $_ptest"
+        else
+                failed="${failed} ${_ptest}"
+                ret=1
+                echo "FAIL: $_ptest"
+        fi
+done
+
+
+# litte summary, output is quite long
+for _ok in $ok; do
+        echo "OK: $_ok"
+done
+
+for _failed in $failed; do
+        echo "Failed: $_failed"
+done
+
+if [ $ret -eq 0 ]; then
+        echo "PASS: @PROJECT@"
+else
+        echo "FAIL: @PROJECT@"
+fi
+exit "$ret"
