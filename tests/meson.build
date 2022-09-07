@@ -14,10 +14,10 @@ ptest_dep = declare_dependency(
 )
 
 ptests = []
-ptestdir = join_paths(get_option('prefix'), get_option('libdir'), 'mcumgr-client'/'ptest')
+ptestdir = join_paths(get_option('prefix'), get_option('libdir'), 'cmcumgr-client'/'ptest')
 
-dir_mcumgr = '..'/'src'/'mcumgr-client'
-inc_mcumgr = join_paths(dir_mcumgr, 'include'/'mcumgr-client')
+dir_mcumgr = '..'/'src'/'cmcumgr-client'
+inc_mcumgr = join_paths(dir_mcumgr, 'include'/'cmcumgr-client')
 dir_cli = '..'/'src'/'cli'
 
 test_file_reader_unix = executable('test-file-reader-unix',

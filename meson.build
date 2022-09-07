@@ -72,7 +72,7 @@ config_h = configure_file(
 )
 add_project_arguments('-include', 'config.h', language : 'c')
 
-subdir('src'/'mcumgr-client')
+subdir('src'/'cmcumgr-client')
 
 if get_option('enable-cli')
     subdir('src'/'cli')

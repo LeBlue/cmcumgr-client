@@ -62,7 +62,7 @@ libmcumgr = static_library(
     dependencies: [ utils_dep, cbor_dep, mcumgr_deps ],
     include_directories: [
         'lib'/'include',
-        'include'/'mcumgr-client',
+        'include'/'cmcumgr-client',
         'transport',
     ],
     c_args: common_cc_flags,
@@ -75,7 +75,7 @@ libmcumgr_shared = shared_library(
     dependencies: [ utils_dep, cbor_dep, mcumgr_deps ],
     include_directories: [
         'lib'/'include',
-        'include'/'mcumgr-client',
+        'include'/'cmcumgr-client',
         'transport',
     ],
     version: meson.project_version(),
@@ -91,21 +91,21 @@ mcumgr_dep = declare_dependency(
 
 install_headers(
     [
-        'include'/'mcumgr-client'/'cmd_img.h',
-        'include'/'mcumgr-client'/'cmd_os.h',
-        'include'/'mcumgr-client'/'file_reader.h',
-        'include'/'mcumgr-client'/'file_reader_unix.h',
-        'include'/'mcumgr-client'/'mcuboot_img.h',
-        'include'/'mcumgr-client'/'mcumgr-client.h',
-        'include'/'mcumgr-client'/'mgmt.h',
-        'include'/'mcumgr-client'/'mgmt_hdr.h',
-        'include'/'mcumgr-client'/'mgmt_img.h',
-        'include'/'mcumgr-client'/'mgmt_os.h',
-        'include'/'mcumgr-client'/'mgmt_utils.h',
-        'include'/'mcumgr-client'/'smp_serial.h',
-        'include'/'mcumgr-client'/'smp_transport.h'
+        'include'/'cmcumgr-client'/'cmd_img.h',
+        'include'/'cmcumgr-client'/'cmd_os.h',
+        'include'/'cmcumgr-client'/'file_reader.h',
+        'include'/'cmcumgr-client'/'file_reader_unix.h',
+        'include'/'cmcumgr-client'/'mcuboot_img.h',
+        'include'/'cmcumgr-client'/'cmcumgr-client.h',
+        'include'/'cmcumgr-client'/'mgmt.h',
+        'include'/'cmcumgr-client'/'mgmt_hdr.h',
+        'include'/'cmcumgr-client'/'mgmt_img.h',
+        'include'/'cmcumgr-client'/'mgmt_os.h',
+        'include'/'cmcumgr-client'/'mgmt_utils.h',
+        'include'/'cmcumgr-client'/'smp_serial.h',
+        'include'/'cmcumgr-client'/'smp_transport.h'
     ],
-    subdir: 'mcumgr-client'
+    subdir: 'cmcumgr-client'
 )
 
 

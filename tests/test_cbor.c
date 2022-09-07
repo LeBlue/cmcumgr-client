@@ -17,7 +17,7 @@
 
 #include "ptest/ptest.h"
 
-#include "mcumgr-client.h"
+#include "cmcumgr-client.h"
 
 
 #define CBOR_BUF_SZ MGMT_MAX_MTU

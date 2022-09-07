@@ -14,9 +14,9 @@
 
 #include "utils.h"
 
-#include "mcumgr-client/mcumgr-client.h"
-#include "mcumgr-client/file_reader_unix.h"
-#include "mcumgr-client/smp_serial.h"
+#include "cmcumgr-client/cmcumgr-client.h"
+#include "cmcumgr-client/file_reader_unix.h"
+#include "cmcumgr-client/smp_serial.h"
 
 #include "cli_opts.h"
 

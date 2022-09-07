@@ -9,7 +9,7 @@
 #include <string.h>
 
 #include "byteordering.h"
-#include "mcumgr-client.h"
+#include "cmcumgr-client.h"
 #include "mgmt_hdr.h"
 
 struct mgmt_hdr {
