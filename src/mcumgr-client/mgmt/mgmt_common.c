@@ -167,15 +167,16 @@ int mgmt_decode_rsp_single_int64(const uint8_t *buf, size_t sz, const char* keyn
  * @param sz size of supplied buffer @p buf
  * @param keyname the key to search in the SMP payload, must not be NULL
  * @param str returns the string value of the key, valid only if 0 was returned, must not be NULL
- * @param strsz size of buffer provided in @p str
+ * @param maxstrsz size of buffer provided in @p str
  *
  * @retval 0 Successful execution, @p retval is valid.
  * @retval 1 SMP packet was parsed without errors, but the @p keyname was not found
  * @retval -EINVAL Argument validation failed, @p buf too short.
  * @retval -ENODATA @p buf too short to hold SMP header or not a complete SMP packet.
  * @retval -ENOMSG SMP payload decoding error or unexpected format, e.g. not a map, requested value has wrong format, ...
+ * @retval -ENOBUFS decoded string longer that @p buf
  */
-int mgmt_decode_rsp_single_stringz(const uint8_t *buf, size_t sz, const char* keyname, char *str, size_t strsz)
+int mgmt_decode_rsp_single_stringz(const uint8_t *buf, size_t sz, const char* keyname, char *str, size_t maxstrsz)
 {
 	CborParser parser;
 	CborValue map_val;
@@ -208,15 +209,17 @@ int mgmt_decode_rsp_single_stringz(const uint8_t *buf, size_t sz, const char* ke
 	}
 
 	if (vt == CborTextStringType) {
-		size_t nlen = strsz;
+		size_t nlen = maxstrsz - 1;
 		rc = cbor_value_copy_text_string(&val, str, &nlen, &val);
 		if (rc == CborErrorOutOfMemory) {
 			/* truncate string */
-			str[strsz - 1] = '\0';
-			return -ENOMEM;
+			return -ENOBUFS;
 		} else if (rc) {
 			return -ENOMSG;
 		}
+		/* no zero-termination on full sized string */
+		str[maxstrsz - 1] = '\0';
+
 		return 0;
 	}
 
