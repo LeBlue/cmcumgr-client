@@ -316,6 +316,9 @@ static void test_mgmt_os_echo_rsp_valid(void)
     const uint8_t msg[18] = "\x03\x00\x00\x0a\x00\x00\x00\x00" "\xbf" "areHallo" "\xff";
     struct mgmt_echo_rsp rsp;
 
+    /* for checing zero-termination, init to non-zero */
+    rsp.echo_str[5] = '\xff';
+
     int ret = mgmt_os_echo_decode_rsp(msg, sizeof(msg), &rsp);
 
     PT_ASSERT(ret == 0);
@@ -334,6 +337,9 @@ static void test_mgmt_os_echo_rsp_valid_maxlen(void)
         "abcd" "\xff";
     struct mgmt_echo_rsp rsp;
 
+    /* for checing zero-termination, init to non-zero */
+    rsp.echo_str[128] = '\xff';
+
     int ret = mgmt_os_echo_decode_rsp(msg, sizeof(msg), &rsp);
 
     PT_ASSERT(ret == 0);
@@ -350,6 +356,9 @@ static void test_mgmt_os_echo_rsp_valid_alt_enc(void)
     /* cbor data { "r": "Hallo" } */
     const uint8_t msg[17] = "\x03\x00\x00\x09\x00\x00\x00\x00" "\xa1" "areHallo";
     struct mgmt_echo_rsp rsp;
+
+    /* for checing zero-termination, init to non-zero */
+    rsp.echo_str[5] = '\xff';
 
     int ret = mgmt_os_echo_decode_rsp(msg, sizeof(msg), &rsp);
 
@@ -370,6 +379,38 @@ static void test_mgmt_os_echo_rsp_empty_str(void)
     PT_ASSERT(ret == 0);
     PT_ASSERT_MEM_EQ("", rsp.echo_str, 0);
     PT_ASSERT(rsp.echo_str[0] == '\0');
+}
+
+
+static void test_mgmt_os_echo_rsp_valid_too_long_1(void)
+{
+    /* zephyr limits resonses to 128 bytes echo string, parsing limited to 128 */
+    /* cbor data { "r": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" "abcde" } */
+    const uint8_t msg[143] = "\x03\x00\x00\x16\x00\x00\x00\x00" "\xbf" "arx" "\x81"
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        "abcde" "\xff";
+    struct mgmt_echo_rsp rsp;
+
+    int ret = mgmt_os_echo_decode_rsp(msg, sizeof(msg), &rsp);
+
+    PT_ASSERT(ret == -ENOBUFS);
+}
+
+
+static void test_mgmt_os_echo_rsp_valid_too_long_2(void)
+{
+    /* zephyr limits resonses to 128 bytes echo string, parsing limited to 128 */
+    /* cbor data { "r": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" "abcdef" } */
+    const uint8_t msg[144] = "\x03\x00\x00\x16\x00\x00\x00\x00" "\xbf" "arx" "\x82"
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        "abcdef" "\xff";
+    struct mgmt_echo_rsp rsp;
+
+    int ret = mgmt_os_echo_decode_rsp(msg, sizeof(msg), &rsp);
+
+    PT_ASSERT(ret == -ENOBUFS);
 }
 
 
@@ -436,6 +477,8 @@ void suite_mgmt_os_parse_rsp(void)
     pt_add_test(test_mgmt_os_echo_rsp_empty_str, "Test parse mgmt OS echo response, empty string", sn);
 
     /* fail cases */
+    pt_add_test(test_mgmt_os_echo_rsp_valid_too_long_1, "Test parse mgmt OS echo response, 1 byte too long", sn);
+    pt_add_test(test_mgmt_os_echo_rsp_valid_too_long_2, "Test parse mgmt OS echo response, 2 byte too long", sn);
     pt_add_test(test_mgmt_os_echo_rsp_missing_key, "Test parse mgmt OS echo response, Fail missing key", sn);
     pt_add_test(test_mgmt_os_echo_rsp_wrong_value_type, "Test parse mgmt OS echo response, Fail wrong value type", sn);
     pt_add_test(test_mgmt_os_echo_rsp_no_map, "Test parse mgmt OS echo response, Fail no cbor map", sn);
