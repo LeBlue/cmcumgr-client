@@ -6,7 +6,6 @@
 #include <stdint.h>
 
 #include "ptest/ptest.h"
-#include "utils_test.h"
 
 #include "mcuboot_img.c"
 

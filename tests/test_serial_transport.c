@@ -11,7 +11,6 @@
 #include <assert.h>
 
 #include "ptest/ptest.h"
-#include "utils_test.h"
 
 #include "smp_serial.h"
 #include "smp_transport.h"

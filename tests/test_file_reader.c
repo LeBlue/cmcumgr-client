@@ -7,7 +7,6 @@
 #include <errno.h>
 
 #include "ptest/ptest.h"
-#include "utils_test.h"
 
 #include "file_reader_unix.h"
 

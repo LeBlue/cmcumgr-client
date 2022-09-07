@@ -12,7 +12,6 @@
 #include <string.h>
 
 #include "ptest/ptest.h"
-#include "utils_test.h"
 #include "mock_transport.h"
 
 #define MOCK_BUF_SZ 2048

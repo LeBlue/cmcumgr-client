@@ -7,7 +7,6 @@
 #include <errno.h>
 
 #include "ptest/ptest.h"
-#include "utils_test.h"
 
 #include "hexlify.h"
 #include "mgmt_img.h"

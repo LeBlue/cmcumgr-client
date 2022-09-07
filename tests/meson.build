@@ -1,7 +1,10 @@
 
 ptest = static_library(
     'ptest',
-    sources: 'ptest'/'ptest.c',
+    sources: [
+        'ptest'/'ptest.c',
+        'ptest'/'ptest_hexdump.c',
+    ],
     c_args: [ '-Wno-unused-argument', '-Wno-sign-compare', '-Wno-unused-parameter' ], # silence warning in lib
 )
 

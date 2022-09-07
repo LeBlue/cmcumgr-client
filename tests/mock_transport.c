@@ -6,7 +6,7 @@
 
 #include "mock_transport.h"
 
-#include "utils_test.h"
+#include "ptest/ptest.h"
 
 static const struct smp_operations mock_transport_ops = {
     .open = mock_transport_connect,
@@ -31,11 +31,11 @@ int mock_transport_init(struct smp_transport *transport, struct smp_mock_handle 
 
 void mock_handle_add_response(struct smp_mock_handle *hd, const uint8_t *buf, size_t sz)
 {
-    ASSERT_TEST_MSG(hd->n_rx_buf < (MAX_CHUNKS - 1), "More packets responses added (%d) than supported by mock", MAX_CHUNKS);
+    PT_ASSERT_TEST_SETUP(hd->n_rx_buf < (MAX_CHUNKS - 1), "More packets responses added (%d) than supported by mock", MAX_CHUNKS);
 
     int idx = hd->n_rx_buf;
     if (sz) {
-        ASSERT_TEST_MSG(buf, "Test buf is NULL");
+        PT_ASSERT_TEST_SETUP(buf, "Test buf is NULL");
         hd->rxbufs[idx].data = buf;
     } else {
         hd->rxbufs[idx].sz = 0;
@@ -69,13 +69,13 @@ int mock_transport_write(struct smp_transport *t, uint8_t *buf, size_t sz)
     }
 
     hd = (struct smp_mock_handle*) t->hd;
-    ASSERT_TEST_MSG(hd->next_tx < (MAX_CHUNKS - 1), "More packets written (%d) than supported by mock", hd->next_tx);
+    PT_ASSERT_TEST_SETUP(hd->next_tx < (MAX_CHUNKS - 1), "More packets written (%d) than supported by mock", hd->next_tx);
 
     idx = hd->next_tx;
 
 
     hd->txbufs[idx].data = malloc(sz);
-    ASSERT_TEST_MSG(hd->txbufs[idx].data != NULL, "Test mem alloc failed");
+    PT_ASSERT_TEST_SETUP(hd->txbufs[idx].data != NULL, "Test mem alloc failed");
 
     memcpy(hd->txbufs[idx].data, buf, hd->txbufs[idx].sz);
 

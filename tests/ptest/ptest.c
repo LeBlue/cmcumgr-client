@@ -214,6 +214,8 @@ static void pt_title_case(char* output, const char* input) {
 
 typedef struct {
   void (*func)(void);
+  void (*func_par)(const void*);
+  const void *param;
   char name[MAX_NAME];
   char suite[MAX_NAME];
 } test_t;
@@ -226,7 +228,7 @@ static int num_tests_fails  = 0;
 
 void pt_add_test(void (*func)(void), const char* name, const char* suite) {
 
-  test_t test;
+  test_t test = {0};
 
   if (num_tests == MAX_TESTS) {
     printf("ERROR: Exceeded maximum test count of %i!\n",
@@ -249,6 +251,34 @@ void pt_add_test(void (*func)(void), const char* name, const char* suite) {
 
   tests[num_tests] = test;
   num_tests++;
+}
+
+void pt_add_test_w_param(void (*func)(const void*), const void *param, const char *name, const char *suite)
+{
+	test_t test = {0};
+
+	if (num_tests == MAX_TESTS) {
+		printf("ERROR: Exceeded maximum test count of %i!\n", MAX_TESTS);
+		abort();
+	}
+
+	if (strlen(name) >= MAX_NAME) {
+		printf("ERROR: Test name '%s' too long (Maximum is %i characters)\n", name, MAX_NAME);
+		abort();
+	}
+
+	if (strlen(suite) >= MAX_NAME) {
+		printf("ERROR: Test suite '%s' too long (Maximum is %i characters)\n", suite, MAX_NAME);
+		abort();
+	}
+
+	test.func_par = func;
+  test.param = param;
+	pt_title_case(test.name, name);
+	pt_title_case(test.suite, suite);
+
+	tests[num_tests] = test;
+	num_tests++;
 }
 
 /* Suites */
@@ -319,7 +349,11 @@ int pt_run(void) {
     printf("    | %s ... ", test.name);
     fflush(stdout);
 
-    test.func();
+    if (test.func) {
+      test.func();
+    } else {
+      test.func_par(test.param);
+    }
 
     suite_passing = suite_passing && test_passing;
 
@@ -355,7 +389,7 @@ int pt_run(void) {
   pt_color(DEFAULT); putchar('|');
   pt_color(GREEN);   printf(" Passed %4d ", num_suites_passes);
   pt_color(DEFAULT); putchar('|');
-  pt_color(RED);     printf(" Failed %4d ", num_suites_fails);
+  if (num_suites_fails) { pt_color(RED); }  printf(" Failed %4d ", num_suites_fails);
   pt_color(DEFAULT); puts("|");
 
   printf("  | Tests   ||");
@@ -363,7 +397,7 @@ int pt_run(void) {
   pt_color(DEFAULT); putchar('|');
   pt_color(GREEN);   printf(" Passed %4d ", num_tests_passes);
   pt_color(DEFAULT); putchar('|');
-  pt_color(RED);     printf(" Failed %4d ", num_tests_fails);
+  if (num_tests_fails) { pt_color(RED); }  printf(" Failed %4d ", num_tests_fails);
   pt_color(DEFAULT); puts("|");
 
   printf("  | Asserts ||");
@@ -371,7 +405,7 @@ int pt_run(void) {
   pt_color(DEFAULT); putchar('|');
   pt_color(GREEN);   printf(" Passed %4d ", num_assert_passes);
   pt_color(DEFAULT); putchar('|');
-  pt_color(RED);     printf(" Failed %4d ", num_assert_fails);
+  if (num_assert_fails) { pt_color(RED); } printf(" Failed %4d ", num_assert_fails);
   pt_color(DEFAULT); puts("|");
 
   puts("  +---------++------------+-------------+-------------+");

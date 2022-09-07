@@ -12,7 +12,6 @@
 #include <string.h>
 
 #include "ptest/ptest.h"
-#include "utils_test.h"
 #include "mock_transport.h"
 
 #include "smp_transport.h"

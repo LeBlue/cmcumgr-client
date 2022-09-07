@@ -9,7 +9,6 @@
 #include <stdlib.h>
 
 #include "ptest/ptest.h"
-#include "utils_test.h"
 
 #include "mcumgr-client.h"
 
