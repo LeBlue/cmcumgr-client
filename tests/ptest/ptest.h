@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define ptest_h
 
 #include <string.h>
+#include <assert.h>
 
 #define _STR(x) #x
 #define _XSTR(x) _STR(x)
@@ -88,5 +89,10 @@ void pt_add_test(void (*func)(void), const char* name, const char* suite);
 void pt_add_test_w_param(void (*func)(const void*), const void *param, const char *name, const char *suite);
 void pt_add_suite(void (*func)(void));
 int pt_run(void);
+
+/* helpers for dealing with test input files */
+void pt_set_prgpath(const char *argv0);
+char *pt_get_file_path(const char *filename);
+
 
 #endif
