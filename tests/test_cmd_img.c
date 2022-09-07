@@ -124,7 +124,7 @@ static void test_cmd_img_list_wrong_cmd_id(void)
 
 static void suite_cmd_img_state(void)
 {
-    const char *sn =  "Suite CMD execution";
+    const char *sn =  "Suite CMD execution IMG list";
 
     pt_add_test(test_cmd_img_list, "Test Command IMG List", sn);
     pt_add_test(test_cmd_img_list_not_supported, "Test Command IMG List: not supported", sn);
@@ -216,7 +216,7 @@ static void test_cmd_img_test_wrong_cmd_id(void)
 
 static void suite_cmd_img_test(void)
 {
-    const char *sn =  "Suite CMD execution";
+    const char *sn =  "Suite CMD execution IMG test";
 
     pt_add_test(test_cmd_img_test, "Test Command IMG Test", sn);
     pt_add_test(test_cmd_img_test_not_supported, "Test Command IMG Test: not supported", sn);
@@ -303,7 +303,7 @@ static void test_cmd_img_confirm_wrong_cmd_id(void)
 
 static void suite_cmd_img_confirm(void)
 {
-    const char *sn =  "Suite CMD execution";
+    const char *sn =  "Suite CMD execution IMG confirm";
 
     pt_add_test(test_cmd_img_confirm, "Test Command IMG Confirm", sn);
     pt_add_test(test_cmd_img_confirm_not_supported, "Test Command IMG Confirm: not supported", sn);
