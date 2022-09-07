@@ -11,7 +11,8 @@
 #include "file_reader_unix.h"
 
 /* must exist for the test with "Hello World!\n" content */
-static const char *test_file_name = "file_reader_in.txt";
+static const char *test_file = "file_reader_in.txt";
+static const char *test_file_name = NULL;
 
 static void test_file_unix_init(void)
 {
@@ -200,6 +201,9 @@ int main(int argc, char** argv)
 {
     (void)argc;
     (void)argv;
+
+    pt_set_prgpath(argv[0]);
+    test_file_name = pt_get_file_path(test_file);
 
     pt_add_suite(suite_file_reader);
 
