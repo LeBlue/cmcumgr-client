@@ -243,6 +243,10 @@ int mgmt_decode_rsp_single_stringz(const uint8_t *buf, size_t sz, const char* ke
  */
 int mgmt_decode_err_rsp(const uint8_t *buf, size_t sz, int64_t *mgmt_err)
 {
+	if (!mgmt_err) {
+		return -EINVAL;
+	}
+
 	/* do not pass accidentally 0 back */
 	*mgmt_err = -1;
 
