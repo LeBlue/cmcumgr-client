@@ -704,7 +704,7 @@ ssize_t mgmt_create_image_upload_segX_req(uint8_t *buf, size_t sz,
 
 
 /**
- * @brief Check and return the mgmt echo return message from an SMP message
+ * @brief Check and return the image upload return message from an SMP message
  *
  * @param buf       The buffer holding the message
  * @param sz        Size of the buffer
@@ -712,7 +712,7 @@ ssize_t mgmt_create_image_upload_segX_req(uint8_t *buf, size_t sz,
  * @param mgmt_err  pointer where to save the mgmt return code
  * @return          0 on success and error code otherwise
  *
- * @retval 0 Successful execution, @p off is valid.
+ * @retval 0 Successful execution, @p mgmt_err is valid. @p off is only valid if @p mgmt_err indicates success.
  * @retval -EINVAL Argument validation failed
  * @retval -ENODATA @p buf too short to hold SMP header or not a complete SMP packet.
  * @retval -ENOMSG SMP payload decoding error or unexpected format, e.g. not a map, requested value has wrong format, ...
@@ -725,6 +725,10 @@ int mgmt_img_upload_decode_rsp(const uint8_t *buf, size_t sz, size_t *off, struc
 	int rc;
 	int64_t val64;
 	int64_t rsp_off = -1;
+
+	if (!off || !rsp) {
+		return -EINVAL;
+	}
 
 	rc = mgmt_header_len_check(buf, sz);
 	if (rc) {
@@ -769,7 +773,13 @@ int mgmt_img_upload_decode_rsp(const uint8_t *buf, size_t sz, size_t *off, struc
 		}
 		cbor_value_advance(&val);
 	}
-	*off = rsp_off;
 
+	if ((rsp->mgmt_rc < 0) || ((rsp->mgmt_rc == 0) && (rsp_off < 0))) {
+		return -ENOMSG;
+	}
+
+	if (rsp->mgmt_rc == 0) {
+		*off = rsp_off;
+	}
 	return 0;
 }
