@@ -100,12 +100,132 @@ static void suite_mgmt_img_req_encode(void)
 }
 
 
+static void test_mgmt_img_upload_parse_rsp_ok(void)
+{
+    int ret;
+    const uint8_t rsp[19] = "\x03\x00\x00\x0b\x00\x01\x00\x01" "\xa2" "brc" "\x00" "coff" "\x18" "x";
+    struct mgmt_rc err = {0};
+    size_t off;
+
+    ret = mgmt_img_upload_decode_rsp(rsp, sizeof(rsp), &off, &err);
+    PT_ASSERT(ret == 0);
+    PT_ASSERT(err.mgmt_rc == 0);
+    PT_ASSERT(off == 120);
+}
+
+static void test_mgmt_img_upload_parse_rsp_ok_mgmt_err(void)
+{
+    int ret;
+    const uint8_t rsp[13] = "\x03\x00\x00\x05\x00\x01\x00\x01" "\xa2" "brc" "\x01";
+    struct mgmt_rc err = {0};
+    size_t off = (size_t) -10;
+
+    ret = mgmt_img_upload_decode_rsp(rsp, sizeof(rsp), &off, &err);
+    PT_ASSERT(ret == 0);
+    PT_ASSERT(err.mgmt_rc == 1);
+    PT_ASSERT(off == (size_t)-10);
+}
+
+
+static void test_mgmt_img_upload_parse_rsp_trunc(void)
+{
+    int ret;
+    const uint8_t rsp[18] = "\x03\x00\x00\x0a\x00\x01\x00\x01" "\xa2" "brc" "\x00" "coff" "\x18";
+    struct mgmt_rc err = {0};
+    size_t off = 0;
+
+    ret = mgmt_img_upload_decode_rsp(rsp, sizeof(rsp), &off, &err);
+    PT_ASSERT(ret == -ENOMSG);
+}
+
+
+static void test_mgmt_img_upload_parse_rsp_trunc_2(void)
+{
+    int ret;
+    const uint8_t rsp[18] = "\x03\x00\x00\x0b\x00\x01\x00\x01" "\xa2" "brc" "\x00" "coff" "\x18";
+    struct mgmt_rc err = {0};
+    size_t off = 0;
+
+    ret = mgmt_img_upload_decode_rsp(rsp, sizeof(rsp), &off, &err);
+    PT_ASSERT(ret == -ENODATA);
+}
+
+
+static void test_mgmt_img_upload_parse_rsp_trunc_hdr(void)
+{
+    int ret;
+    const uint8_t rsp[7] = "\x03\x00\x00\x0a\x00\x01\x00";
+    struct mgmt_rc err = {0};
+    size_t off = 0;
+
+    ret = mgmt_img_upload_decode_rsp(rsp, sizeof(rsp), &off, &err);
+    PT_ASSERT(ret == -ENODATA);
+}
+
+static void test_mgmt_img_upload_parse_rsp_missing_off(void)
+{
+    int ret;
+    struct mgmt_rc err = {0};
+    size_t off;
+    const uint8_t rsp[13] = "\x03\x00\x00\x05\x00\x01\x00\x01" "\xa2" "brc" "\x00";
+
+    ret = mgmt_img_upload_decode_rsp(rsp, sizeof(rsp), &off, &err);
+    PT_ASSERT(ret == -ENOMSG);
+}
+
+static void test_mgmt_img_upload_parse_rsp_missing_rc(void)
+{
+    int ret;
+    const uint8_t rsp[14] = "\x03\x00\x00\x06\x00\x01\x00\x01" "\xa2" "coff" "\x18";
+    struct mgmt_rc err = {0};
+    size_t off;
+
+    ret = mgmt_img_upload_decode_rsp(rsp, sizeof(rsp), &off, &err);
+    PT_ASSERT(ret == -ENOMSG);
+}
+
+static void test_mgmt_img_upload_parse_rsp_invalid_args(void)
+{
+    int ret;
+    const uint8_t rsp[19] = "\x03\x00\x00\x0b\x00\x01\x00\x01" "\xa2" "brc" "\x00" "coff" "\x18" "x";
+    struct mgmt_rc err = {0};
+    size_t off;
+
+    ret = mgmt_img_upload_decode_rsp(NULL, sizeof(rsp), &off, &err);
+    PT_ASSERT(ret == -EINVAL);
+
+    ret = mgmt_img_upload_decode_rsp(rsp, 0, &off, &err);
+    PT_ASSERT(ret == -ENODATA); /* not techically invalid, is zero length data */
+
+    ret = mgmt_img_upload_decode_rsp(rsp, sizeof(rsp), NULL, &err);
+    PT_ASSERT(ret == -EINVAL);
+
+    ret = mgmt_img_upload_decode_rsp(rsp, sizeof(rsp), &off, NULL);
+    PT_ASSERT(ret == -EINVAL);
+}
+
+
+static void suite_mgmt_img_rsp_parse(void)
+{
+    const char *sn = "Suite Cbor parse image upload rsp";
+
+    pt_add_test(test_mgmt_img_upload_parse_rsp_ok, "Test parse IMG upload OK", sn);
+    pt_add_test(test_mgmt_img_upload_parse_rsp_ok_mgmt_err, "Test parse IMG upload OK: mgmt err", sn);
+    pt_add_test(test_mgmt_img_upload_parse_rsp_trunc, "Test parse IMG upload truncated", sn);
+    pt_add_test(test_mgmt_img_upload_parse_rsp_trunc_2, "Test parse IMG upload truncated 2", sn);
+    pt_add_test(test_mgmt_img_upload_parse_rsp_trunc_hdr, "Test parse IMG upload truncated header", sn);
+    pt_add_test(test_mgmt_img_upload_parse_rsp_missing_off, "Test parse IMG upload missing 'offset'", sn);
+    pt_add_test(test_mgmt_img_upload_parse_rsp_missing_rc, "Test parse IMG upload missing 'rc'", sn);
+    pt_add_test(test_mgmt_img_upload_parse_rsp_invalid_args, "Test parse IMG upload: invalid fn arguments", sn);
+}
+
 int main(int argc, char** argv)
 {
     (void)argc;
     (void)argv;
 
     pt_add_suite(suite_mgmt_img_req_encode);
+    pt_add_suite(suite_mgmt_img_rsp_parse);
 
     return pt_run();
 }
