@@ -13,12 +13,12 @@
 #include "mgmt_hdr.h"
 
 struct mgmt_hdr {
-    uint8_t  nh_op_res;         /* 5 bits reserved, 3 bits MGMT_OP_XXX */
-    uint8_t  nh_flags;          /* XXX reserved for future flags */
-    uint16_t nh_len;            /* length of the payload */
-    uint16_t nh_group;          /* MGMT_GROUP_XXX */
-    uint8_t  nh_seq;            /* sequence number */
-    uint8_t  nh_id;             /* message ID within group */
+	uint8_t  nh_op_res;         /* 5 bits reserved, 3 bits MGMT_OP_XXX */
+	uint8_t  nh_flags;          /* XXX reserved for future flags */
+	uint16_t nh_len;            /* length of the payload */
+	uint16_t nh_group;          /* MGMT_GROUP_XXX */
+	uint8_t  nh_seq;            /* sequence number */
+	uint8_t  nh_id;             /* message ID within group */
 };
 
 
@@ -183,4 +183,3 @@ uint8_t mgmt_header_get_seq(const uint8_t *buf)
 	nh = (struct mgmt_hdr *)buf;
 	return nh->nh_seq;
 }
-
