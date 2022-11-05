@@ -1,6 +1,6 @@
 
 project('cmcumgr-client', 'c',
-    version: '0.2.0',
+    version: '0.2.1',
     default_options: [
             'c_std=gnu99',
             'prefix=/usr',
